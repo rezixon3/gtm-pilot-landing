@@ -722,6 +722,154 @@ function PipelineSection() {
 }
 
 // ---------------------------------------------------------------------------
+// Feature section: AI Copilot
+// ---------------------------------------------------------------------------
+
+const COPILOT_LINES: { delay: number; kind: 'prompt' | 'agent' | 'tool' | 'dim' | 'success' | 'error' | 'bold'; text: string }[] = [
+  { delay: 0, kind: 'prompt', text: 'Find work emails for everyone in my prospects table using Prospeo. Skip personal domains like gmail and yahoo.' },
+  { delay: 0.6, kind: 'agent', text: "I'll set up an email enrichment pipeline on your Prospects table." },
+  { delay: 1.0, kind: 'tool', text: '> gtm_add_field("Email", type: text, kind: computed)' },
+  { delay: 1.3, kind: 'dim', text: '  Writing function: sdk.prospeo.findEmail(name, domain)' },
+  { delay: 1.6, kind: 'dim', text: '  Adding filter: skip gmail.com, yahoo.com, hotmail.com' },
+  { delay: 2.0, kind: 'tool', text: '> gtm_run(f_email, limit: 5)' },
+  { delay: 2.3, kind: 'dim', text: '  Testing on 5 rows first...' },
+  { delay: 2.8, kind: 'success', text: '  \u2713 5/5 found' },
+  { delay: 3.2, kind: 'agent', text: 'Test batch looks good. Running on all 500 rows.' },
+  { delay: 3.6, kind: 'tool', text: '> gtm_run(f_email)' },
+  { delay: 4.0, kind: 'dim', text: '  Batch 1/5 complete... 98/100' },
+  { delay: 4.3, kind: 'dim', text: '  Batch 2/5 complete... 100/100' },
+  { delay: 4.6, kind: 'dim', text: '  Batch 3/5 complete... 97/100' },
+  { delay: 4.9, kind: 'dim', text: '  Batch 4/5 complete... 100/100' },
+  { delay: 5.2, kind: 'dim', text: '  Batch 5/5 complete... 92/100' },
+  { delay: 5.8, kind: 'success', text: '  \u2713 487 found' },
+  { delay: 6.0, kind: 'error', text: '  \u2717 13 not found' },
+  { delay: 6.4, kind: 'bold', text: 'Done. 487 emails found across 500 rows. 42s.' },
+]
+
+function CopilotSection() {
+  const [visible, setVisible] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const node = ref.current
+    if (!node) return
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e?.isIntersecting) { setVisible(true); obs.disconnect() } },
+      { threshold: 0.2 },
+    )
+    obs.observe(node)
+    return () => obs.disconnect()
+  }, [])
+
+  return (
+    <section className="mx-auto mt-32 max-w-[1140px] px-6 sm:mt-48">
+      <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:gap-20">
+        {/* Left: copy */}
+        <Reveal className="shrink-0 lg:w-[340px] lg:sticky lg:top-32">
+          <h2 className="text-[1.6rem] font-bold leading-[1.15] tracking-[-0.035em] text-white/85 sm:text-[2.2rem]">
+            Talk to it.<br />
+            <span className="text-white/35">It builds the pipeline.</span>
+          </h2>
+          <p className="mt-5 text-[15px] leading-[1.75] text-white/35">
+            No clicking, no configuring, no dragging columns into place.
+            Describe what you need in plain English.
+          </p>
+          <p className="mt-4 text-[15px] leading-[1.75] text-white/25">
+            The AI agent creates the table, writes the functions,
+            connects the APIs, and runs everything.
+          </p>
+          <div className="mt-6 flex items-center gap-2.5">
+            <div className="flex size-5 items-center justify-center rounded-md bg-white/[0.04]">
+              <svg className="size-3 text-white/25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <span className="text-[12px] text-white/20">Powered by Claude Code</span>
+          </div>
+        </Reveal>
+
+        {/* Right: terminal visual */}
+        <div ref={ref} className="relative flex-1">
+          <div className="pointer-events-none absolute -inset-20 -z-10" style={{
+            background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(99,102,241,0.03) 0%, transparent 70%)',
+          }} />
+
+          <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0C0C0C]" style={{
+            boxShadow: '0 32px 80px -16px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03) inset',
+          }}>
+            {/* Terminal chrome */}
+            <div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#141414] px-4 py-3">
+              <div className="flex gap-[6px]">
+                <div className="size-[9px] rounded-full bg-white/[0.06]" />
+                <div className="size-[9px] rounded-full bg-white/[0.06]" />
+                <div className="size-[9px] rounded-full bg-white/[0.06]" />
+              </div>
+              <span className="ml-2 text-[11px] text-white/15">Terminal</span>
+            </div>
+
+            {/* Terminal content */}
+            <div className="px-5 py-5 font-mono text-[12px] leading-[1.8] sm:px-6 sm:text-[13px]">
+              {COPILOT_LINES.map((line, i) => {
+                const show = visible
+                const lineDelay = line.delay
+
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      opacity: show ? 1 : 0,
+                      transform: show ? 'translateY(0)' : 'translateY(4px)',
+                      transition: `opacity 0.4s ease ${lineDelay}s, transform 0.4s ease ${lineDelay}s`,
+                    }}
+                  >
+                    {line.kind === 'prompt' && (
+                      <div className="mb-4">
+                        <span className="text-[#6366F1]/60">&gt; </span>
+                        <span className="text-white/60">{line.text}</span>
+                      </div>
+                    )}
+                    {line.kind === 'agent' && (
+                      <div className="mb-1 mt-3">
+                        <span className="text-white/50">{line.text}</span>
+                      </div>
+                    )}
+                    {line.kind === 'tool' && (
+                      <div className="mb-0.5">
+                        <span className="text-amber-300/40">{line.text}</span>
+                      </div>
+                    )}
+                    {line.kind === 'dim' && (
+                      <div className="mb-0.5">
+                        <span className="text-white/20">{line.text}</span>
+                      </div>
+                    )}
+                    {line.kind === 'success' && (
+                      <div className="mb-0.5">
+                        <span className="text-emerald-400/60">{line.text}</span>
+                      </div>
+                    )}
+                    {line.kind === 'error' && (
+                      <div className="mb-0.5">
+                        <span className="text-red-400/50">{line.text}</span>
+                      </div>
+                    )}
+                    {line.kind === 'bold' && (
+                      <div className="mt-3">
+                        <span className="font-medium text-white/65">{line.text}</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -800,6 +948,9 @@ export function App() {
 
         {/* Programmable columns */}
         <PipelineSection />
+
+        {/* AI Copilot */}
+        <CopilotSection />
 
         {/* Extensions */}
         <section className="mx-auto mt-28 max-w-[1000px] px-6 sm:mt-40">
