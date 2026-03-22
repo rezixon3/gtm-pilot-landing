@@ -1,98 +1,92 @@
 import { useState, useEffect, useRef } from 'react'
 
 // ---------------------------------------------------------------------------
-// Demo data - realistic GTM enrichment scenario
+// Demo data
 // ---------------------------------------------------------------------------
 
 const ROWS = [
-  { company: 'Stripe',  domain: 'stripe.com',  title: 'Head of Sales',       firstName: 'Alex',   lastName: 'Morgan',  email: 'alex.m@stripe.com',  score: 95 },
-  { company: 'Linear',  domain: 'linear.app',  title: 'VP Revenue',          firstName: 'Karri',  lastName: 'Saarinen', email: 'karri.s@linear.app',  score: 92 },
-  { company: 'Notion',  domain: 'notion.so',   title: 'CRO',                 firstName: 'Ivan',   lastName: 'Zhao',    email: 'ivan.z@notion.so',   score: 78 },
-  { company: 'Vercel',  domain: 'vercel.com',  title: 'Dir. Partnerships',   firstName: 'Guill.', lastName: 'Rauch',   email: 'g.rauch@vercel.com', score: 90 },
-  { company: 'Figma',   domain: 'figma.com',   title: 'Head of Growth',      firstName: 'Dylan',  lastName: 'Field',   email: 'dylan.f@figma.com',  score: 88 },
-  { company: 'Resend',  domain: 'resend.com',  title: 'CEO',                 firstName: 'Zeno',   lastName: 'Rocha',   email: 'zeno.r@resend.com',  score: 82 },
-  { company: 'Clerk',   domain: 'clerk.com',   title: 'VP Sales',            firstName: 'Colin',  lastName: 'Ref',     email: null,                 score: null }, // will be error
-  { company: 'Neon',    domain: 'neon.tech',    title: 'Head of BD',          firstName: 'Nikita', lastName: 'Shamg.',  email: 'nikita.s@neon.tech', score: 91 },
+  { company: 'Stripe',  domain: 'stripe.com',  title: 'Head of Sales',       email: 'alex.m@stripe.com',  score: 95 },
+  { company: 'Linear',  domain: 'linear.app',  title: 'VP Revenue',          email: 'karri.s@linear.app', score: 92 },
+  { company: 'Notion',  domain: 'notion.so',   title: 'CRO',                 email: 'ivan.z@notion.so',   score: 78 },
+  { company: 'Vercel',  domain: 'vercel.com',  title: 'Dir. Partnerships',   email: 'g.rauch@vercel.com', score: 90 },
+  { company: 'Figma',   domain: 'figma.com',   title: 'Head of Growth',      email: 'dylan.f@figma.com',  score: 88 },
+  { company: 'Resend',  domain: 'resend.com',  title: 'CEO',                 email: 'zeno.r@resend.com',  score: 82 },
+  { company: 'Clerk',   domain: 'clerk.com',   title: 'VP Sales',            email: null,                 score: null },
+  { company: 'Neon',    domain: 'neon.tech',    title: 'Head of BD',          email: 'nikita.s@neon.tech', score: 91 },
 ]
 
 const USER_MSG = 'Find emails and score leads for these 8 prospects using Prospeo'
 
-interface TermLine { text: string; kind: 'user-prompt' | 'agent' | 'dim' | 'success' | 'error' | 'bold' | 'tool-call' | 'tool-result' }
+interface TermLine { text: string; kind: 'agent' | 'dim' | 'success' | 'error' | 'bold' | 'tool' }
 
 const TERM_SCRIPT: { at: number; lines: TermLine[] }[] = [
   { at: 42, lines: [
-    { text: "I'll enrich your Prospects table using Prospeo.", kind: 'agent' },
+    { text: "I'll enrich your Prospects table", kind: 'agent' },
+    { text: 'using Prospeo.', kind: 'agent' },
+  ]},
+  { at: 50, lines: [
     { text: '', kind: 'dim' },
+    { text: '> gtm_add_field("Email", computed)', kind: 'tool' },
+    { text: '> gtm_add_field("Score", computed)', kind: 'tool' },
   ]},
-  { at: 48, lines: [
-    { text: 'gtm_add_field("Email", computed, prospeo.findEmail)', kind: 'tool-call' },
-    { text: 'gtm_add_field("Lead Score", computed, scoringFn)', kind: 'tool-call' },
-  ]},
-  { at: 56, lines: [
-    { text: 'Fields created. Running on 8 records...', kind: 'dim' },
-    { text: '', kind: 'dim' },
-  ]},
-  { at: 74, lines: [
-    { text: 'gtm_run(t_prospects, f_email, limit=8)', kind: 'tool-call' },
+  { at: 60, lines: [
+    { text: 'Running on 8 records...', kind: 'dim' },
   ]},
   { at: 130, lines: [
-    { text: '\u2713 Email: 7/8 found, 1 error', kind: 'success' },
-    { text: '  \u2717 Clerk: no email found for contact', kind: 'error' },
-  ]},
-  { at: 138, lines: [
     { text: '', kind: 'dim' },
-    { text: 'gtm_run(t_prospects, f_score)', kind: 'tool-call' },
+    { text: '\u2713 Email: 7/8 found', kind: 'success' },
+    { text: '\u2717 Clerk: not found', kind: 'error' },
   ]},
-  { at: 180, lines: [
-    { text: '\u2713 Score: 7/8 computed', kind: 'success' },
+  { at: 142, lines: [
     { text: '', kind: 'dim' },
-    { text: 'Done. 7 prospects enriched, 1 with errors.', kind: 'bold' },
+    { text: '> gtm_run(f_score)', kind: 'tool' },
+  ]},
+  { at: 185, lines: [
+    { text: '\u2713 Score: 7/8 complete', kind: 'success' },
+    { text: '', kind: 'dim' },
+    { text: 'Done. 7 enriched, 1 error.', kind: 'bold' },
   ]},
 ]
 
 // ---------------------------------------------------------------------------
-// Animation timeline (ticks @ 55ms for smoother feel)
+// Timeline (ticks @ 55ms)
 // ---------------------------------------------------------------------------
 
 const T = 55
-const LOOP = 280
+const LOOP = 290
 
 const TYPE_START = 5
 const TYPE_END = 35
-const ROW_START = 46
+const ROW_START = 44
 const ROW_GAP = 2
 
-// Email column: pending -> running -> ok/error (staggered per row)
 const EMAIL_PEND = 68
 const EMAIL_GO = 76
-const EMAIL_STEP = 6     // stagger between rows
-const EMAIL_DONE_DUR = 8 // ticks from run start to ok
+const EMAIL_STEP = 6
+const EMAIL_DONE_DUR = 8
 
-// Score column
-const SCORE_PEND = 134
-const SCORE_GO = 142
+const SCORE_PEND = 136
+const SCORE_GO = 144
 const SCORE_STEP = 5
 const SCORE_DONE_DUR = 6
 
-const FADE_OUT = 250
+const FADE_OUT = 260
 
 type CellStatus = 'none' | 'pending' | 'running' | 'ok' | 'error'
 
 function cellState(row: number, col: 'email' | 'score', tick: number): CellStatus {
-  // Clerk (row 6) gets an error
-  const isErrorRow = row === 6
-
+  const isErr = row === 6
   if (col === 'email') {
     const go = EMAIL_GO + row * EMAIL_STEP
     const done = go + EMAIL_DONE_DUR
-    if (tick >= done) return isErrorRow ? 'error' : 'ok'
+    if (tick >= done) return isErr ? 'error' : 'ok'
     if (tick >= go) return 'running'
     if (tick >= EMAIL_PEND) return 'pending'
     return 'none'
   }
   const go = SCORE_GO + row * SCORE_STEP
   const done = go + SCORE_DONE_DUR
-  if (tick >= done) return isErrorRow ? 'error' : 'ok'
+  if (tick >= done) return isErr ? 'error' : 'ok'
   if (tick >= go) return 'running'
   if (tick >= SCORE_PEND) return 'pending'
   return 'none'
@@ -101,14 +95,12 @@ function cellState(row: number, col: 'email' | 'score', tick: number): CellStatu
 function typedChars(tick: number): number {
   if (tick < TYPE_START) return 0
   if (tick >= TYPE_END) return USER_MSG.length
-  const progress = (tick - TYPE_START) / (TYPE_END - TYPE_START)
-  // Ease-out for natural typing feel
-  const eased = 1 - Math.pow(1 - progress, 2)
-  return Math.floor(eased * USER_MSG.length)
+  const p = (tick - TYPE_START) / (TYPE_END - TYPE_START)
+  return Math.floor((1 - Math.pow(1 - p, 2)) * USER_MSG.length)
 }
 
 // ---------------------------------------------------------------------------
-// Platform icons (inline SVG)
+// Icons
 // ---------------------------------------------------------------------------
 
 function AppleLogo({ className }: { className?: string }) {
@@ -128,164 +120,113 @@ function WindowsLogo({ className }: { className?: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Demo: Window chrome (macOS title bar)
+// Demo: Chrome bar
 // ---------------------------------------------------------------------------
 
 function Chrome() {
   return (
-    <div className="flex h-11 items-center border-b border-[#E7E5E4] bg-[#F5F5F4] px-4 select-none">
+    <div className="flex h-[38px] items-center border-b border-white/[0.06] bg-[#1A1A1A] px-4 select-none">
       <div className="flex gap-[7px]">
-        <i className="block size-[11px] rounded-full bg-[#FF5F57]" />
-        <i className="block size-[11px] rounded-full bg-[#FEBC2E]" />
-        <i className="block size-[11px] rounded-full bg-[#28C840]" />
+        <i className="block size-[10px] rounded-full bg-[#FF5F57]" />
+        <i className="block size-[10px] rounded-full bg-[#FEBC2E]" />
+        <i className="block size-[10px] rounded-full bg-[#28C840]" />
       </div>
-      <span className="flex-1 text-center text-[11px] font-medium tracking-wide text-[#78716C]">
+      <span className="flex-1 text-center text-[11px] tracking-wide text-white/20">
         GTM Pilot - prospects.db
       </span>
-      <div className="w-[54px]" />
+      <div className="w-[50px]" />
     </div>
   )
 }
 
 // ---------------------------------------------------------------------------
-// Demo: Sidebar - matches real app exactly
+// Demo: Sidebar
 // ---------------------------------------------------------------------------
 
 function Sidebar({ tick }: { tick: number }) {
-  const rowsDone = tick >= ROW_START + ROWS.length * ROW_GAP
-  const n = rowsDone
-    ? ROWS.length
-    : tick >= ROW_START
-      ? Math.min(ROWS.length, Math.floor((tick - ROW_START) / ROW_GAP) + 1)
-      : ROWS.length
+  const n = tick >= ROW_START + ROWS.length * ROW_GAP ? ROWS.length
+    : tick >= ROW_START ? Math.min(ROWS.length, Math.floor((tick - ROW_START) / ROW_GAP) + 1)
+    : ROWS.length
 
   return (
-    <div className="flex w-[168px] shrink-0 flex-col border-r border-[#E7E5E4] bg-[#F5F5F4]">
-      {/* Logo header */}
-      <div className="flex h-11 items-center border-b border-[#E7E5E4] bg-white px-3">
-        <img src="/icon.svg" alt="" className="mr-2 h-[14px] w-auto opacity-80" />
-        <span className="text-[12px] font-semibold tracking-tight text-[#1C1917]">GTM Pilot</span>
-      </div>
-
+    <div className="flex w-[140px] shrink-0 flex-col border-r border-white/[0.06] bg-[#111]">
       {/* Tables */}
-      <div className="px-2 pt-3">
-        <p className="mb-1.5 px-2 text-[10px] font-semibold tracking-wide text-[#78716C]/70 uppercase">Tables</p>
-        <div className="flex items-center gap-2 rounded-md bg-[#6366F1]/[0.08] px-2.5 py-[7px]">
-          <svg className="size-[13px] text-[#6366F1]/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <line x1="3" y1="9" x2="21" y2="9" />
-            <line x1="9" y1="3" x2="9" y2="21" />
-          </svg>
-          <span className="text-[11px] font-medium text-[#1C1917]">Prospects</span>
-          <span className="ml-auto font-mono text-[10px] tabular-nums text-[#6366F1]/50">{n}</span>
-        </div>
-        <div className="mt-0.5 flex items-center gap-2 rounded-md px-2.5 py-[7px] opacity-40">
-          <svg className="size-[13px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <line x1="3" y1="9" x2="21" y2="9" />
-            <line x1="9" y1="3" x2="9" y2="21" />
-          </svg>
-          <span className="text-[11px] text-[#44403C]">Companies</span>
-          <span className="ml-auto font-mono text-[10px] text-[#A8A29E]">24</span>
+      <div className="px-2.5 pt-3">
+        <p className="mb-1.5 px-1 text-[9px] font-medium tracking-[0.1em] text-white/20 uppercase">Tables</p>
+        <div className="flex items-center gap-1.5 rounded-md bg-white/[0.07] px-2 py-[6px]">
+          <svg className="size-[11px] text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+          <span className="text-[11px] font-medium text-white/70">Prospects</span>
+          <span className="ml-auto font-mono text-[9px] text-white/25">{n}</span>
         </div>
       </div>
 
       {/* Extensions */}
-      <div className="mt-auto border-t border-[#E7E5E4] px-2 py-3">
-        <p className="mb-1.5 px-2 text-[10px] font-semibold tracking-wide text-[#78716C]/70 uppercase">Extensions</p>
-        {[
-          { name: 'Prospeo', connected: true },
-          { name: 'Apollo', connected: true },
-          { name: 'Firecrawl', connected: false },
-        ].map(ext => (
-          <div key={ext.name} className="flex items-center gap-2 px-2 py-[5px]">
-            <span className="relative flex size-[14px] items-center justify-center rounded bg-[#E7E5E4]/60">
-              <span className="text-[8px] font-bold text-[#78716C]">{ext.name[0]}</span>
-              {ext.connected && (
-                <span className="absolute -right-[2px] -bottom-[2px] size-[7px] rounded-full border-[1.5px] border-[#F5F5F4] bg-[#10B981]" />
-              )}
-            </span>
-            <span className={`text-[11px] ${ext.connected ? 'text-[#44403C]' : 'text-[#A8A29E]'}`}>{ext.name}</span>
+      <div className="mt-auto border-t border-white/[0.06] px-2.5 py-2.5">
+        <p className="mb-1 px-1 text-[9px] font-medium tracking-[0.1em] text-white/20 uppercase">Connected</p>
+        {['Prospeo', 'Apollo'].map(name => (
+          <div key={name} className="flex items-center gap-1.5 px-1 py-[4px]">
+            <span className="size-[5px] rounded-full bg-emerald-400/80" />
+            <span className="text-[10px] text-white/50">{name}</span>
           </div>
         ))}
-      </div>
-
-      {/* File */}
-      <div className="border-t border-[#E7E5E4] px-3 py-2">
-        <span className="font-mono text-[9px] text-[#A8A29E]">prospects.db</span>
+        <div className="flex items-center gap-1.5 px-1 py-[4px]">
+          <span className="size-[5px] rounded-full bg-white/10" />
+          <span className="text-[10px] text-white/20">Firecrawl</span>
+        </div>
       </div>
     </div>
   )
 }
 
 // ---------------------------------------------------------------------------
-// Demo: Grid - the core product experience
+// Demo: Grid
 // ---------------------------------------------------------------------------
 
-const COLS: { key: string; label: string; w: number; mono?: boolean; computed?: boolean; align?: 'right' }[] = [
-  { key: 'company',  label: 'Company',    w: 84 },
-  { key: 'domain',   label: 'Domain',     w: 90,  mono: true },
-  { key: 'title',    label: 'Title',      w: 120 },
-  { key: 'email',    label: 'Email',      w: 152, mono: true, computed: true },
-  { key: 'score',    label: 'Score',      w: 70,  computed: true, align: 'right' },
+const COLS: { key: string; label: string; w: number; mono?: boolean; computed?: boolean }[] = [
+  { key: 'company', label: 'Company',  w: 80 },
+  { key: 'domain',  label: 'Domain',   w: 92,  mono: true },
+  { key: 'title',   label: 'Title',    w: 112 },
+  { key: 'email',   label: 'Email',    w: 148, mono: true, computed: true },
+  { key: 'score',   label: 'Score',    w: 56,  computed: true },
 ]
 
 function Grid({ tick }: { tick: number }) {
-  // Compute how many emails/scores are done for the toolbar counter
-  const emailsDone = ROWS.reduce((a, _, i) => {
-    const s = cellState(i, 'email', tick)
-    return a + (s === 'ok' || s === 'error' ? 1 : 0)
-  }, 0)
-  const scoresDone = ROWS.reduce((a, _, i) => {
-    const s = cellState(i, 'score', tick)
-    return a + (s === 'ok' || s === 'error' ? 1 : 0)
-  }, 0)
+  const emailsDone = ROWS.reduce((a, _, i) => a + (['ok','error'].includes(cellState(i, 'email', tick)) ? 1 : 0), 0)
+  const scoresDone = ROWS.reduce((a, _, i) => a + (['ok','error'].includes(cellState(i, 'score', tick)) ? 1 : 0), 0)
   const isRunning = tick >= EMAIL_PEND && !(emailsDone === 8 && scoresDone === 8)
   const allDone = emailsDone === 8 && scoresDone === 8
 
-  // Show Email col only after it's being added
-  const showEmailCol = tick >= 50
-  const showScoreCol = tick >= 54
+  const showEmail = tick >= 52
+  const showScore = tick >= 55
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden bg-[#FAFAF9]">
+    <div className="flex flex-1 flex-col overflow-hidden bg-[#0D0D0D]">
       {/* Toolbar */}
-      <div className="flex h-[38px] shrink-0 items-center justify-between border-b border-[#E7E5E4] bg-[#F5F5F4] px-3">
+      <div className="flex h-[34px] shrink-0 items-center justify-between border-b border-white/[0.06] bg-[#141414] px-3">
         <div className="flex items-center gap-2">
-          <span className="text-[12px] font-semibold text-[#1C1917]">Prospects</span>
-          <span className="h-3.5 w-px bg-[#E7E5E4]" />
-          <span className="text-[10px] text-[#A8A29E]">All rows</span>
+          <span className="text-[11px] font-semibold text-white/60">Prospects</span>
+          <span className="text-[9px] text-white/15">All rows</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] tabular-nums text-[#A8A29E]">{ROWS.length} rows</span>
-          {/* Run button */}
-          <button className={`flex h-[26px] items-center gap-1.5 rounded-md px-2.5 text-[11px] font-medium transition-all ${
-            isRunning
-              ? 'bg-[#6366F1] text-white'
-              : allDone
-                ? 'bg-[#10B981]/10 text-[#10B981]'
-                : 'bg-[#6366F1] text-white'
+          <span className="font-mono text-[9px] text-white/15">{ROWS.length} rows</span>
+          <button className={`flex h-[22px] items-center gap-1 rounded-md px-2 text-[10px] font-medium ${
+            isRunning ? 'bg-[#6366F1] text-white' : allDone ? 'bg-emerald-400/15 text-emerald-400/80' : 'bg-[#6366F1] text-white'
           }`}>
             {isRunning ? (
               <>
-                <svg className="size-3 anim-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="8" cy="8" r="6" strokeOpacity="0.3" />
-                  <path d="M14 8a6 6 0 0 0-6-6" strokeLinecap="round" />
+                <svg className="size-[10px] anim-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="8" cy="8" r="6" strokeOpacity="0.3" /><path d="M14 8a6 6 0 0 0-6-6" strokeLinecap="round" />
                 </svg>
                 Running...
               </>
             ) : allDone ? (
               <>
-                <svg className="size-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <polyline points="3.5 8.5 6.5 11.5 12.5 5" />
-                </svg>
+                <svg className="size-[10px]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="3.5 8.5 6.5 11.5 12.5 5" /></svg>
                 Complete
               </>
             ) : (
               <>
-                <svg className="size-3" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M5 3.5l8 4.5-8 4.5V3.5z" />
-                </svg>
+                <svg className="size-[10px]" viewBox="0 0 16 16" fill="currentColor"><path d="M5 3.5l8 4.5-8 4.5V3.5z" /></svg>
                 Run
               </>
             )}
@@ -294,25 +235,18 @@ function Grid({ tick }: { tick: number }) {
       </div>
 
       {/* Column headers */}
-      <div className="flex shrink-0 border-b border-[#E7E5E4] bg-[#F5F5F4]">
-        <div className="flex w-[34px] shrink-0 items-center justify-center border-r border-[#E7E5E4] py-[8px]">
-          <span className="size-[11px] rounded-[3px] border border-[#D6D3D1]" />
+      <div className="flex shrink-0 border-b border-white/[0.06] bg-[#141414]">
+        <div className="flex w-[28px] shrink-0 items-center justify-center border-r border-white/[0.04] py-[6px]">
+          <span className="size-[9px] rounded-[2px] border border-white/10" />
         </div>
         {COLS.map((c, i) => {
-          const isNew = (c.key === 'email' && showEmailCol && tick < 56) ||
-                        (c.key === 'score' && showScoreCol && tick < 60)
-          if (c.key === 'email' && !showEmailCol) return null
-          if (c.key === 'score' && !showScoreCol) return null
+          if (c.key === 'email' && !showEmail) return null
+          if (c.key === 'score' && !showScore) return null
+          const isNew = (c.key === 'email' && tick < 58) || (c.key === 'score' && tick < 61)
           return (
-            <div
-              key={c.key}
-              className={`flex items-center px-2.5 py-[8px] ${isNew ? 'anim-col-add' : ''} ${i < COLS.length - 1 ? 'border-r border-[#E7E5E4]/60' : ''}`}
-              style={{ width: c.w }}
-            >
-              <span className="text-[10.5px] font-medium text-[#78716C]">{c.label}</span>
-              {c.computed && (
-                <span className="ml-auto text-[8px] font-semibold text-[#6366F1]/40">fx</span>
-              )}
+            <div key={c.key} className={`flex items-center px-2 py-[6px] ${isNew ? 'anim-col-add' : ''} ${i < COLS.length - 1 ? 'border-r border-white/[0.04]' : ''}`} style={{ width: c.w }}>
+              <span className="text-[9.5px] font-medium text-white/25">{c.label}</span>
+              {c.computed && <span className="ml-auto text-[7px] font-semibold text-[#6366F1]/40">fx</span>}
             </div>
           )
         })}
@@ -324,38 +258,14 @@ function Grid({ tick }: { tick: number }) {
           if (tick < ROW_START + i * ROW_GAP) return null
           const es = cellState(i, 'email', tick)
           const ss = cellState(i, 'score', tick)
-          const isEven = i % 2 === 0
           return (
-            <div
-              key={i}
-              className="anim-row flex border-b border-[#F3F2F0]"
-              style={{ background: isEven ? '#FFFFFF' : '#FAFAF9' }}
-            >
-              {/* Row number */}
-              <div className="flex w-[34px] shrink-0 items-center justify-center border-r border-[#E7E5E4] bg-[#F5F5F4] text-[10px] tabular-nums text-[#A8A29E]">
-                {i + 1}
-              </div>
-              {/* Input cells */}
-              <InputCell w={84} value={row.company} border />
-              <InputCell w={90} value={row.domain} mono border />
-              <InputCell w={120} value={row.title} border />
-              {/* Computed cells */}
-              {showEmailCol && (
-                <ComputedCell
-                  w={152}
-                  value={row.email}
-                  state={es}
-                  mono
-                  border
-                />
-              )}
-              {showScoreCol && (
-                <ScoreCell
-                  w={70}
-                  value={row.score}
-                  state={ss}
-                />
-              )}
+            <div key={i} className="anim-row flex border-b border-white/[0.03]" style={{ background: i % 2 ? 'rgba(255,255,255,0.008)' : 'transparent' }}>
+              <div className="flex w-[28px] shrink-0 items-center justify-center border-r border-white/[0.04] text-[9px] tabular-nums text-white/10">{i + 1}</div>
+              <DataCell w={80} value={row.company} border />
+              <DataCell w={92} value={row.domain} mono border />
+              <DataCell w={112} value={row.title} border />
+              {showEmail && <CompCell w={148} value={row.email} state={es} mono border />}
+              {showScore && <ScoreCell w={56} value={row.score} state={ss} />}
             </div>
           )
         })}
@@ -364,60 +274,40 @@ function Grid({ tick }: { tick: number }) {
   )
 }
 
-function InputCell({ w, value, mono, border }: { w: number; value: string; mono?: boolean; border?: boolean }) {
+function DataCell({ w, value, mono, border }: { w: number; value: string; mono?: boolean; border?: boolean }) {
   return (
-    <div
-      className={`flex items-center px-2.5 py-[7px] ${border ? 'border-r border-[#F3F2F0]' : ''}`}
-      style={{ width: w }}
-    >
-      <span className={`truncate text-[11px] text-[#1C1917] ${mono ? 'font-mono text-[10px] text-[#44403C]' : ''}`}>
-        {value}
-      </span>
+    <div className={`flex items-center px-2 py-[6px] ${border ? 'border-r border-white/[0.04]' : ''}`} style={{ width: w }}>
+      <span className={`truncate text-[10px] text-white/55 ${mono ? 'font-mono text-[9.5px]' : ''}`}>{value}</span>
     </div>
   )
 }
 
-function ComputedCell({ w, value, state, mono, border }: {
+function CompCell({ w, value, state, mono, border }: {
   w: number; value: string | null; state: CellStatus; mono?: boolean; border?: boolean
 }) {
-  const bgClass = state === 'ok' ? 'anim-cell-ok'
-    : state === 'error' ? 'anim-cell-err'
-    : ''
-
   return (
-    <div
-      className={`flex items-center gap-1.5 px-2.5 py-[7px] ${bgClass} ${border ? 'border-r border-[#F3F2F0]' : ''}`}
-      style={{ width: w, background: state === 'error' ? 'rgba(239,68,68,0.03)' : undefined }}
-    >
-      {state === 'none' && (
-        <span className="text-[10px] text-[#D6D3D1]">&mdash;</span>
-      )}
-      {state === 'pending' && (
-        <span className="inline-block size-[5px] rounded-full bg-[#9CA3AF]/40 anim-pulse" />
-      )}
+    <div className={`flex items-center gap-1 px-2 py-[6px] ${state === 'ok' ? 'anim-cell-ok' : ''} ${state === 'error' ? 'anim-cell-err' : ''} ${border ? 'border-r border-white/[0.04]' : ''}`} style={{ width: w }}>
+      {state === 'none' && <span className="text-[9px] text-white/8">&mdash;</span>}
+      {state === 'pending' && <span className="inline-block size-[4px] rounded-full bg-white/15 anim-pulse" />}
       {state === 'running' && (
-        <svg className="size-[12px] text-[#6366F1] anim-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="8" cy="8" r="6" strokeOpacity="0.2" />
-          <path d="M14 8a6 6 0 0 0-6-6" strokeLinecap="round" />
+        <svg className="size-[10px] text-[#6366F1]/70 anim-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="8" cy="8" r="6" strokeOpacity="0.2" /><path d="M14 8a6 6 0 0 0-6-6" strokeLinecap="round" />
         </svg>
       )}
       {state === 'ok' && value && (
         <>
-          <svg className="size-[11px] shrink-0 text-[#10B981] anim-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+          <svg className="size-[10px] shrink-0 text-emerald-400/70 anim-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <polyline points="3.5 8.5 6.5 11.5 12.5 5" />
           </svg>
-          <span className={`anim-value truncate text-[11px] text-[#1C1917] ${mono ? 'font-mono text-[10px]' : ''}`}>
-            {value}
-          </span>
+          <span className={`anim-value truncate text-[10px] text-white/65 ${mono ? 'font-mono text-[9.5px]' : ''}`}>{value}</span>
         </>
       )}
       {state === 'error' && (
-        <div className="anim-error flex items-center gap-1.5">
-          <svg className="size-[11px] shrink-0 text-[#EF4444]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <line x1="4" y1="4" x2="12" y2="12" />
-            <line x1="12" y1="4" x2="4" y2="12" />
+        <div className="anim-error flex items-center gap-1">
+          <svg className="size-[10px] shrink-0 text-red-400/80" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="4.5" y1="4.5" x2="11.5" y2="11.5" /><line x1="11.5" y1="4.5" x2="4.5" y2="11.5" />
           </svg>
-          <span className="text-[10px] text-[#EF4444]/70">Error</span>
+          <span className="text-[9px] text-red-400/50">Error</span>
         </div>
       )}
     </div>
@@ -426,49 +316,36 @@ function ComputedCell({ w, value, state, mono, border }: {
 
 function ScoreCell({ w, value, state }: { w: number; value: number | null; state: CellStatus }) {
   return (
-    <div
-      className={`flex items-center justify-end gap-1.5 px-2.5 py-[7px] ${state === 'ok' ? 'anim-cell-ok' : ''} ${state === 'error' ? 'anim-cell-err' : ''}`}
-      style={{ width: w, background: state === 'error' ? 'rgba(239,68,68,0.03)' : undefined }}
-    >
-      {state === 'none' && (
-        <span className="text-[10px] text-[#D6D3D1]">&mdash;</span>
-      )}
-      {state === 'pending' && (
-        <span className="inline-block size-[5px] rounded-full bg-[#9CA3AF]/40 anim-pulse" />
-      )}
+    <div className={`flex items-center justify-end gap-1 px-2 py-[6px] ${state === 'ok' ? 'anim-cell-ok' : ''} ${state === 'error' ? 'anim-cell-err' : ''}`} style={{ width: w }}>
+      {state === 'none' && <span className="text-[9px] text-white/8">&mdash;</span>}
+      {state === 'pending' && <span className="inline-block size-[4px] rounded-full bg-white/15 anim-pulse" />}
       {state === 'running' && (
-        <svg className="size-[12px] text-[#6366F1] anim-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="8" cy="8" r="6" strokeOpacity="0.2" />
-          <path d="M14 8a6 6 0 0 0-6-6" strokeLinecap="round" />
+        <svg className="size-[10px] text-[#6366F1]/70 anim-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="8" cy="8" r="6" strokeOpacity="0.2" /><path d="M14 8a6 6 0 0 0-6-6" strokeLinecap="round" />
         </svg>
       )}
       {state === 'ok' && value !== null && (
         <>
-          <svg className="size-[11px] shrink-0 text-[#10B981] anim-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+          <svg className="size-[10px] shrink-0 text-emerald-400/70 anim-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <polyline points="3.5 8.5 6.5 11.5 12.5 5" />
           </svg>
-          {/* Score bar + number */}
-          <div className="anim-value flex items-center gap-1.5">
-            <div className="h-[4px] w-[28px] overflow-hidden rounded-full bg-[#E7E5E4]">
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${value}%`,
-                  background: value >= 90 ? '#10B981' : value >= 80 ? '#6366F1' : '#F59E0B',
-                }}
-              />
+          <div className="anim-value flex items-center gap-1">
+            <div className="h-[3px] w-[22px] overflow-hidden rounded-full bg-white/[0.06]">
+              <div className="h-full rounded-full" style={{
+                width: `${value}%`,
+                background: value >= 90 ? '#34D399' : value >= 80 ? '#818CF8' : '#FBBF24',
+              }} />
             </div>
-            <span className="font-mono text-[10px] tabular-nums text-[#1C1917]">{value}</span>
+            <span className="font-mono text-[9px] tabular-nums text-white/55">{value}</span>
           </div>
         </>
       )}
       {state === 'error' && (
         <div className="anim-error flex items-center gap-1">
-          <svg className="size-[11px] shrink-0 text-[#EF4444]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <line x1="4" y1="4" x2="12" y2="12" />
-            <line x1="12" y1="4" x2="4" y2="12" />
+          <svg className="size-[10px] shrink-0 text-red-400/80" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="4.5" y1="4.5" x2="11.5" y2="11.5" /><line x1="11.5" y1="4.5" x2="4.5" y2="11.5" />
           </svg>
-          <span className="text-[10px] text-[#EF4444]/70">&mdash;</span>
+          <span className="text-[9px] text-red-400/50">&mdash;</span>
         </div>
       )}
     </div>
@@ -476,69 +353,41 @@ function ScoreCell({ w, value, state }: { w: number; value: number | null; state
 }
 
 // ---------------------------------------------------------------------------
-// Demo: Terminal - Claude Code style
+// Demo: Terminal
 // ---------------------------------------------------------------------------
 
 function Term({ tick }: { tick: number }) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-  }, [tick])
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => { ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: 'smooth' }) }, [tick])
 
   const chars = typedChars(tick)
-  const showPrompt = tick >= TYPE_START
-  const doneTyping = tick >= TYPE_END
+  const show = tick >= TYPE_START
+  const done = tick >= TYPE_END
 
   return (
-    <div className="flex w-[256px] shrink-0 flex-col border-l border-[#E7E5E4] bg-[#F5F5F4]">
-      {/* Header */}
-      <div className="flex h-[32px] items-center border-b border-[#E7E5E4] bg-white px-3">
-        <svg className="mr-1.5 size-[12px] text-[#78716C]/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <polyline points="7 8 10 11 7 14" />
-          <line x1="13" y1="14" x2="17" y2="14" />
-        </svg>
-        <span className="text-[10px] font-medium text-[#78716C]">Terminal</span>
+    <div className="flex w-[220px] shrink-0 flex-col border-l border-white/[0.06] bg-[#0A0A0A]">
+      <div className="border-b border-white/[0.06] px-3 py-[6px]">
+        <span className="text-[9px] font-medium text-white/20">Terminal</span>
       </div>
-
-      {/* Content */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto bg-[#1C1917] px-3 py-3 font-mono text-[9.5px] leading-[16px]">
-        {/* Initial prompt */}
-        {!showPrompt && (
-          <div className="flex items-center">
-            <span className="mr-1 text-[#6366F1]/70">&gt;</span>
-            <span className="anim-blink text-white/30">_</span>
+      <div ref={ref} className="flex-1 overflow-y-auto px-2.5 py-2.5 font-mono text-[9px] leading-[15px]">
+        {!show && (
+          <span className="text-white/15">&gt; <span className="anim-blink text-white/30">_</span></span>
+        )}
+        {show && (
+          <div className="mb-2.5">
+            <span className="text-[#6366F1]/70">&gt; </span>
+            <span className="text-white/70">{USER_MSG.slice(0, chars)}</span>
+            {!done && <span className="anim-blink text-[#6366F1]/60">_</span>}
           </div>
         )}
-
-        {/* User typing */}
-        {showPrompt && (
-          <div className="mb-3">
-            <span className="text-[#6366F1]/80">&gt; </span>
-            <span className="text-white/80">{USER_MSG.slice(0, chars)}</span>
-            {!doneTyping && <span className="anim-blink text-[#6366F1]/60">_</span>}
-          </div>
-        )}
-
-        {/* Agent responses */}
         {TERM_SCRIPT.map((block, bi) => {
           if (tick < block.at) return null
-          const showCount = Math.min(
-            block.lines.length,
-            Math.floor((tick - block.at) / 2) + 1
-          )
+          const n = Math.min(block.lines.length, Math.floor((tick - block.at) / 2) + 1)
           return (
-            <div key={bi} className="mb-2">
-              {block.lines.slice(0, showCount).map((line, li) => {
-                if (!line.text) return <div key={li} className="h-1.5" />
-                return (
-                  <div key={li} className={`anim-term-line ${termLineClass(line.kind)}`}>
-                    {line.kind === 'tool-call' && (
-                      <span className="mr-1 text-[#F59E0B]/50">&gt;</span>
-                    )}
-                    {line.text}
-                  </div>
-                )
+            <div key={bi} className="mb-1.5">
+              {block.lines.slice(0, n).map((l, li) => {
+                if (!l.text) return <div key={li} className="h-1" />
+                return <div key={li} className={`anim-term-line ${tClass(l.kind)}`}>{l.text}</div>
               })}
             </div>
           )
@@ -548,86 +397,65 @@ function Term({ tick }: { tick: number }) {
   )
 }
 
-function termLineClass(kind: TermLine['kind']): string {
-  switch (kind) {
-    case 'agent': return 'text-white/60'
-    case 'dim': return 'text-white/30'
-    case 'success': return 'text-[#10B981]/80'
-    case 'error': return 'text-[#EF4444]/70'
-    case 'bold': return 'text-white/80 font-medium'
-    case 'tool-call': return 'text-[#F59E0B]/60'
-    case 'tool-result': return 'text-white/40'
-    default: return 'text-white/50'
+function tClass(k: TermLine['kind']): string {
+  switch (k) {
+    case 'agent': return 'text-white/55'
+    case 'dim': return 'text-white/25'
+    case 'success': return 'text-emerald-400/70'
+    case 'error': return 'text-red-400/60'
+    case 'bold': return 'text-white/75 font-medium'
+    case 'tool': return 'text-amber-300/50'
+    default: return 'text-white/40'
   }
 }
 
 // ---------------------------------------------------------------------------
-// Demo: Status bar - matches real app
+// Demo: Status bar
 // ---------------------------------------------------------------------------
 
 function StatusBar({ tick }: { tick: number }) {
   const n = ROWS.length
-  const ed = ROWS.reduce((a, _, i) => a + (cellState(i, 'email', tick) === 'ok' || cellState(i, 'email', tick) === 'error' ? 1 : 0), 0)
-  const sd = ROWS.reduce((a, _, i) => a + (cellState(i, 'score', tick) === 'ok' || cellState(i, 'score', tick) === 'error' ? 1 : 0), 0)
-  const errors = ROWS.reduce((a, _, i) => {
-    const eErr = cellState(i, 'email', tick) === 'error' ? 1 : 0
-    const sErr = cellState(i, 'score', tick) === 'error' ? 1 : 0
-    return a + eErr + sErr
-  }, 0)
+  const ed = ROWS.reduce((a, _, i) => a + (['ok','error'].includes(cellState(i, 'email', tick)) ? 1 : 0), 0)
+  const sd = ROWS.reduce((a, _, i) => a + (['ok','error'].includes(cellState(i, 'score', tick)) ? 1 : 0), 0)
+  const errs = ROWS.reduce((a, _, i) => a + (cellState(i, 'email', tick) === 'error' ? 1 : 0) + (cellState(i, 'score', tick) === 'error' ? 1 : 0), 0)
 
-  let statusDot = '#9CA3AF' // gray
-  let statusText = 'Ready'
+  let text = 'Ready'
+  let dotColor = 'rgba(255,255,255,0.15)'
+  if (tick >= 185 + 8) { text = `Complete \u00B7 ${n * 2 - errs} ok`; dotColor = '#34D399' }
+  else if (tick >= SCORE_PEND) { text = `Scoring ${sd}/${n}`; dotColor = '#818CF8' }
+  else if (tick >= EMAIL_PEND) { text = `Emails ${ed}/${n}`; dotColor = '#818CF8' }
 
-  if (tick >= 180 + 8) {
-    statusDot = '#10B981'
-    statusText = `Complete: ${n * 2 - errors} ok`
-  } else if (tick >= SCORE_PEND) {
-    statusDot = '#6366F1'
-    statusText = `Scoring ${sd}/${n}`
-  } else if (tick >= EMAIL_PEND) {
-    statusDot = '#6366F1'
-    statusText = `Finding emails ${ed}/${n}`
-  }
-
-  const progressPct = tick >= 180 + 8 ? 100
-    : tick >= SCORE_PEND ? Math.round(((ed + sd) / (n * 2)) * 100)
-    : tick >= EMAIL_PEND ? Math.round((ed / (n * 2)) * 100)
-    : 0
+  const pct = tick >= 185 + 8 ? 100 : tick >= SCORE_PEND ? Math.round(((ed + sd) / (n * 2)) * 100) : tick >= EMAIL_PEND ? Math.round((ed / (n * 2)) * 100) : 0
 
   return (
-    <div className="flex h-[28px] items-center justify-between border-t border-[#E7E5E4] bg-white px-3 text-[10px] text-[#78716C]">
-      <div className="flex items-center gap-2">
-        <span className="size-[6px] rounded-full transition-colors duration-300" style={{ background: statusDot }} />
-        <span>{statusText}</span>
-        {errors > 0 && tick >= 130 && (
-          <span className="text-[#EF4444]">{errors} error{errors > 1 ? 's' : ''}</span>
-        )}
-        {/* Inline progress bar during execution */}
-        {tick >= EMAIL_PEND && tick < 180 + 8 && (
-          <div className="h-[3px] w-[60px] overflow-hidden rounded-full bg-[#E7E5E4]">
-            <div
-              className="h-full rounded-full bg-[#6366F1] transition-all duration-300"
-              style={{ width: `${progressPct}%` }}
-            />
+    <div className="flex h-[24px] items-center justify-between border-t border-white/[0.06] bg-[#111] px-3 text-[9px] text-white/20">
+      <div className="flex items-center gap-1.5">
+        <span className="size-[5px] rounded-full transition-colors duration-300" style={{ background: dotColor }} />
+        <span>{text}</span>
+        {errs > 0 && tick >= 130 && <span className="text-red-400/60">{errs} err</span>}
+        {tick >= EMAIL_PEND && tick < 185 + 8 && (
+          <div className="h-[2px] w-[40px] overflow-hidden rounded-full bg-white/[0.06]">
+            <div className="h-full rounded-full bg-[#6366F1]/60 transition-all duration-300" style={{ width: `${pct}%` }} />
           </div>
         )}
       </div>
-      <div className="flex items-center gap-1.5 text-[#A8A29E]">
+      <div className="flex items-center gap-1 text-white/12">
         <span>Prospects</span>
-        <span className="text-[#D6D3D1]">&middot;</span>
-        <span className="tabular-nums">{n} rows</span>
-        <span className="text-[#D6D3D1]">&middot;</span>
-        <span>2 extensions</span>
+        <span>&middot;</span>
+        <span>{n} rows</span>
+        <span>&middot;</span>
+        <span>2 ext</span>
       </div>
     </div>
   )
 }
 
 // ---------------------------------------------------------------------------
-// Demo window wrapper
+// Demo window
 // ---------------------------------------------------------------------------
 
-const DEMO_W = 1100
+const DEMO_W = 900
+const DEMO_CONTENT_H = 290
 
 function Demo() {
   const [tick, setTick] = useState(0)
@@ -636,47 +464,44 @@ function Demo() {
   const el = useRef<HTMLDivElement>(null)
   const outer = useRef<HTMLDivElement>(null)
 
-  // Responsive scale
   useEffect(() => {
     function measure() {
       if (!outer.current) return
-      setScale(Math.min(1, outer.current.clientWidth / DEMO_W))
+      const pad = 32
+      setScale(Math.min(1, (outer.current.clientWidth - pad) / DEMO_W))
     }
     measure()
     window.addEventListener('resize', measure, { passive: true })
     return () => window.removeEventListener('resize', measure)
   }, [])
 
-  // Start on intersection
   useEffect(() => {
     const node = el.current
     if (!node) return
     const obs = new IntersectionObserver(([e]) => {
       if (e?.isIntersecting) { setLive(true); obs.disconnect() }
-    }, { threshold: 0.1 })
+    }, { threshold: 0.05 })
     obs.observe(node)
     return () => obs.disconnect()
   }, [])
 
-  // Tick loop
   useEffect(() => {
     if (!live) return
     const id = setInterval(() => setTick(t => t >= LOOP ? 0 : t + 1), T)
     return () => clearInterval(id)
   }, [live])
 
-  // Fade in/out
   const opacity = tick >= FADE_OUT ? Math.max(0, 1 - (tick - FADE_OUT) / (LOOP - FADE_OUT))
     : tick < 4 ? tick / 4 : 1
 
-  const intrinsicH = 440 + 44 + 28 // content + chrome + status
-  const scaledH = intrinsicH * scale
+  const totalH = DEMO_CONTENT_H + 38 + 24 // content + chrome + status
+  const scaledH = totalH * scale
 
   return (
-    <div ref={outer} className="relative mx-auto w-full max-w-[1100px]">
+    <div ref={outer} className="relative mx-auto w-full" style={{ maxWidth: DEMO_W }}>
       {/* Ambient glow */}
-      <div className="pointer-events-none absolute -inset-40 z-0"
-        style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(99,102,241,0.04) 0%, transparent 70%)' }} />
+      <div className="pointer-events-none absolute -inset-32 z-0"
+        style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(99,102,241,0.04) 0%, transparent 70%)' }} />
 
       <div style={{ height: scaledH, position: 'relative' }}>
         <div
@@ -688,15 +513,14 @@ function Demo() {
           }}
         >
           <div
-            className="relative z-10 overflow-hidden rounded-xl"
+            className="relative z-10 overflow-hidden rounded-xl border border-white/[0.06]"
             style={{
               opacity,
-              border: '1px solid rgba(0,0,0,0.08)',
-              boxShadow: '0 25px 60px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.05)',
+              boxShadow: '0 24px 80px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset',
             }}
           >
             <Chrome />
-            <div className="flex" style={{ height: 440 }}>
+            <div className="flex" style={{ height: DEMO_CONTENT_H }}>
               <Sidebar tick={tick} />
               <Grid tick={tick} />
               <Term tick={tick} />
@@ -751,7 +575,7 @@ export function App() {
         </section>
 
         {/* Demo */}
-        <section className="anim-hero-4 mx-auto mt-12 max-w-[1200px] px-2 sm:mt-16 sm:px-4">
+        <section className="anim-hero-4 mx-auto mt-12 max-w-[1000px] px-4 sm:mt-16">
           <Demo />
         </section>
 
