@@ -576,40 +576,36 @@ const GRID_COLS = [
   {
     name: 'Domain',
     kind: 'input' as const,
-    w: 130,
     code: null,
-    values: ['acme.com', 'stripe.com', 'linear.app', 'notion.so'],
+    values: ['acme.com', 'stripe.com', 'linear.app', 'notion.so', 'vercel.com'],
     mono: true,
   },
   {
     name: 'Company Info',
     kind: 'computed' as const,
-    w: 170,
     code: 'sdk.apollo.enrich(domain)',
-    values: ['{ name: "Acme" }', '{ name: "Stripe" }', '{ name: "Linear" }', '{ name: "Notion" }'],
+    values: ['{ name: "Acme", hc: 250 }', '{ name: "Stripe", hc: 8000 }', '{ name: "Linear", hc: 400 }', '{ name: "Notion", hc: 3000 }', '{ name: "Vercel", hc: 600 }'],
     mono: true,
   },
   {
     name: 'Email',
     kind: 'computed' as const,
-    w: 190,
     code: 'sdk.prospeo.findEmail(name, domain)',
-    values: ['john@acme.com', 'jane@stripe.com', null, 'ivan@notion.so'],
+    values: ['john@acme.com', 'jane@stripe.com', null, 'ivan@notion.so', 'g.rauch@vercel.com'],
     mono: true,
   },
   {
     name: 'Score',
     kind: 'computed' as const,
-    w: 80,
     code: 'headcount > 100 ? 90 : 40',
-    values: ['90', '85', null, '72'],
+    values: ['90', '95', null, '88', '92'],
     mono: false,
   },
 ]
 
 function PipelineSection() {
   return (
-    <section className="mx-auto mt-32 max-w-[960px] px-6 sm:mt-48">
+    <section className="mx-auto mt-32 max-w-[1140px] px-6 sm:mt-48">
       <Reveal>
         <h2 className="text-center text-[1.6rem] font-bold leading-[1.15] tracking-[-0.035em] text-white/85 sm:text-[2.2rem]">
           Every column is programmable.
@@ -625,9 +621,9 @@ function PipelineSection() {
 
       {/* The spreadsheet-as-pipeline */}
       <Reveal delay={0.12}>
-        <div className="relative mx-auto mt-16 max-w-[680px]">
+        <div className="relative mt-16">
           {/* Glow */}
-          <div className="pointer-events-none absolute -inset-24 -z-10" style={{
+          <div className="pointer-events-none absolute -inset-32 -z-10" style={{
             background: 'radial-gradient(ellipse 80% 70% at 50% 40%, rgba(99,102,241,0.04) 0%, transparent 70%)',
           }} />
 
@@ -637,30 +633,32 @@ function PipelineSection() {
             {/* Column headers with code */}
             <div className="flex">
               {GRID_COLS.map((col, ci) => (
-                <div key={col.name} className="flex items-stretch">
-                  <div className={`flex flex-col ${ci < GRID_COLS.length - 1 ? 'border-r border-white/[0.04]' : ''}`} style={{ width: col.w }}>
+                <div key={col.name} className="flex flex-1 items-stretch">
+                  <div className={`flex flex-1 flex-col ${ci < GRID_COLS.length - 1 ? 'border-r border-white/[0.05]' : ''}`}>
                     {/* Column name */}
-                    <div className="flex items-center gap-1.5 border-b border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
-                      <span className="text-[11px] font-semibold text-white/50">{col.name}</span>
+                    <div className="flex items-center gap-2 border-b border-white/[0.06] bg-white/[0.025] px-4 py-3">
+                      <span className="text-[12px] font-semibold text-white/55">{col.name}</span>
                       {col.kind === 'computed' && (
-                        <span className="ml-auto font-mono text-[8px] font-bold italic text-[#6366F1]/40">fx</span>
+                        <span className="ml-auto flex items-center gap-1 rounded-full bg-[#6366F1]/10 px-2 py-0.5">
+                          <span className="font-mono text-[9px] font-bold italic text-[#6366F1]/45">fx</span>
+                        </span>
                       )}
                     </div>
                     {/* Code snippet (for computed) or "input" label */}
-                    <div className="border-b border-white/[0.06] bg-[#0A0A0A] px-3 py-2">
+                    <div className="border-b border-white/[0.06] bg-[#0A0A0A]/80 px-4 py-3">
                       {col.code ? (
-                        <pre className="font-mono text-[9.5px] leading-[1.5] text-[#DCDCAA]/40 whitespace-pre-wrap">{col.code}</pre>
+                        <pre className="font-mono text-[11px] leading-[1.6] text-[#DCDCAA]/40 whitespace-pre-wrap">{col.code}</pre>
                       ) : (
-                        <span className="text-[9.5px] italic text-white/12">manual input</span>
+                        <span className="text-[11px] italic text-white/12">manual input</span>
                       )}
                     </div>
                   </div>
                   {/* Flow connector between columns */}
                   {ci < GRID_COLS.length - 1 && (
-                    <div className="relative flex w-0 items-start" style={{ marginTop: 36 }}>
-                      <div className="absolute -left-[1px] top-[10px] z-10 h-[2px] w-[2px]">
+                    <div className="relative flex w-0 items-start" style={{ marginTop: 42 }}>
+                      <div className="absolute -left-[1px] top-[12px] z-10 h-[2px] w-[2px]">
                         <div
-                          className="h-[2px] w-[10px] rounded-full"
+                          className="h-[3px] w-[14px] rounded-full"
                           style={{
                             background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.5), transparent)',
                             animation: `pipe-flow ${2.2 + ci * 0.3}s ease-in-out ${ci * 0.5}s infinite`,
@@ -674,7 +672,7 @@ function PipelineSection() {
             </div>
 
             {/* Data rows */}
-            {[0, 1, 2, 3].map(ri => (
+            {[0, 1, 2, 3, 4].map(ri => (
               <div key={ri} className="flex border-t border-white/[0.03]" style={{
                 background: ri % 2 ? 'rgba(255,255,255,0.008)' : 'transparent',
               }}>
@@ -684,20 +682,19 @@ function PipelineSection() {
                   return (
                     <div
                       key={col.name}
-                      className={`flex items-center gap-1.5 px-3 py-[7px] ${ci < GRID_COLS.length - 1 ? 'border-r border-white/[0.04]' : ''}`}
-                      style={{ width: col.w }}
+                      className={`flex flex-1 items-center gap-2 px-4 py-[9px] ${ci < GRID_COLS.length - 1 ? 'border-r border-white/[0.05]' : ''}`}
                     >
                       {col.kind === 'computed' && !isErr && (
-                        <svg className="size-[9px] shrink-0 text-emerald-400/40" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                        <svg className="size-[10px] shrink-0 text-emerald-400/40" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                           <polyline points="3.5 8.5 6.5 11.5 12.5 5" />
                         </svg>
                       )}
                       {col.kind === 'computed' && isErr && (
-                        <svg className="size-[9px] shrink-0 text-red-400/40" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                        <svg className="size-[10px] shrink-0 text-red-400/40" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                           <line x1="4.5" y1="4.5" x2="11.5" y2="11.5" /><line x1="11.5" y1="4.5" x2="4.5" y2="11.5" />
                         </svg>
                       )}
-                      <span className={`truncate text-[10.5px] ${col.mono ? 'font-mono text-[10px]' : ''} ${isErr ? 'text-white/12' : 'text-white/40'}`}>
+                      <span className={`truncate text-[11.5px] ${col.mono ? 'font-mono text-[11px]' : ''} ${isErr ? 'text-white/12' : 'text-white/45'}`}>
                         {isErr ? '\u2014' : val}
                       </span>
                     </div>
