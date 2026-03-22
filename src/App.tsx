@@ -572,6 +572,41 @@ function Reveal({ children, className = '', delay = 0 }: {
 // Feature section: Programmable columns
 // ---------------------------------------------------------------------------
 
+const GRID_COLS = [
+  {
+    name: 'Domain',
+    kind: 'input' as const,
+    w: 130,
+    code: null,
+    values: ['acme.com', 'stripe.com', 'linear.app', 'notion.so'],
+    mono: true,
+  },
+  {
+    name: 'Company Info',
+    kind: 'computed' as const,
+    w: 170,
+    code: 'sdk.apollo.enrich(domain)',
+    values: ['{ name: "Acme" }', '{ name: "Stripe" }', '{ name: "Linear" }', '{ name: "Notion" }'],
+    mono: true,
+  },
+  {
+    name: 'Email',
+    kind: 'computed' as const,
+    w: 190,
+    code: 'sdk.prospeo.findEmail(name, domain)',
+    values: ['john@acme.com', 'jane@stripe.com', null, 'ivan@notion.so'],
+    mono: true,
+  },
+  {
+    name: 'Score',
+    kind: 'computed' as const,
+    w: 80,
+    code: 'headcount > 100 ? 90 : 40',
+    values: ['90', '85', null, '72'],
+    mono: false,
+  },
+]
+
 function PipelineSection() {
   return (
     <section className="mx-auto mt-32 max-w-[960px] px-6 sm:mt-48">
@@ -588,145 +623,101 @@ function PipelineSection() {
         </p>
       </Reveal>
 
-      {/* The visual: a single elegant card showing a column's code */}
+      {/* The spreadsheet-as-pipeline */}
       <Reveal delay={0.12}>
-        <div className="relative mx-auto mt-16 max-w-[560px]">
-          {/* Glow behind card */}
+        <div className="relative mx-auto mt-16 max-w-[680px]">
+          {/* Glow */}
           <div className="pointer-events-none absolute -inset-24 -z-10" style={{
-            background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(99,102,241,0.05) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse 80% 70% at 50% 40%, rgba(99,102,241,0.04) 0%, transparent 70%)',
           }} />
 
           <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0F0F0F]" style={{
             boxShadow: '0 32px 80px -16px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03) inset',
           }}>
-            {/* Column header bar */}
-            <div className="flex items-center gap-3 border-b border-white/[0.06] px-6 py-4">
-              <div className="flex items-center gap-2.5">
-                <div className="flex size-6 items-center justify-center rounded-md bg-[#6366F1]/10">
-                  <span className="font-mono text-[10px] font-bold italic text-[#6366F1]/60">fx</span>
-                </div>
-                <span className="text-[15px] font-semibold tracking-[-0.01em] text-white/80">Email</span>
-              </div>
-              <div className="ml-auto flex items-center gap-3">
-                <span className="text-[11px] text-white/20">computed</span>
-                <div className="h-3 w-px bg-white/[0.06]" />
-                <span className="text-[11px] text-white/20">via Prospeo</span>
-              </div>
-            </div>
-
-            {/* Code */}
-            <div className="px-6 py-5">
-              <pre className="font-mono text-[12.5px] leading-[2]">
-                <span className="text-[#C586C0]/50">async function</span>
-                <span className="text-white/30"> (inputs, sdk) {'{'}</span>
-{'\n'}
-                <span className="text-white/30">{'  '}</span>
-                <span className="text-[#C586C0]/50">const </span>
-                <span className="text-white/40">result = </span>
-                <span className="text-[#C586C0]/50">await </span>
-                <span className="text-[#DCDCAA]/50">sdk.prospeo.findEmail</span>
-                <span className="text-white/30">({'{'}</span>
-{'\n'}
-                <span className="text-white/30">{'    '}</span>
-                <span className="text-white/40">name: </span>
-                <span className="text-[#9CDCFE]/45">inputs.name</span>
-                <span className="text-white/20">,</span>
-{'\n'}
-                <span className="text-white/30">{'    '}</span>
-                <span className="text-white/40">domain: </span>
-                <span className="text-[#9CDCFE]/45">inputs.domain</span>
-{'\n'}
-                <span className="text-white/30">{'  '}{'}'}) </span>
-{'\n'}
-{'\n'}
-                <span className="text-white/30">{'  '}</span>
-                <span className="text-[#C586C0]/50">return </span>
-                <span className="text-white/30">{'{ '}</span>
-                <span className="text-white/40">value: </span>
-                <span className="text-[#9CDCFE]/45">result.email</span>
-                <span className="text-white/20">, </span>
-                <span className="text-white/40">status: </span>
-                <span className="text-[#CE9178]/45">"SUCCESS"</span>
-                <span className="text-white/30">{' }'}</span>
-{'\n'}
-                <span className="text-white/30">{'}'}</span>
-              </pre>
-            </div>
-
-            {/* Results strip */}
-            <div className="border-t border-white/[0.06] px-6 py-4">
-              <div className="flex items-center gap-6">
-                {[
-                  { v: 'alex.m@stripe.com', ok: true },
-                  { v: 'karri.s@linear.app', ok: true },
-                  { v: 'ivan.z@notion.so', ok: true },
-                  { v: null, ok: false },
-                ].map((cell, i) => (
-                  <div key={i} className="flex items-center gap-1.5">
-                    {cell.ok ? (
-                      <svg className="size-[10px] shrink-0 text-emerald-400/50" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                        <polyline points="3.5 8.5 6.5 11.5 12.5 5" />
-                      </svg>
-                    ) : (
-                      <svg className="size-[10px] shrink-0 text-red-400/50" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                        <line x1="4.5" y1="4.5" x2="11.5" y2="11.5" /><line x1="11.5" y1="4.5" x2="4.5" y2="11.5" />
-                      </svg>
-                    )}
-                    <span className={`font-mono text-[10.5px] ${cell.ok ? 'text-white/40' : 'text-white/15'}`}>
-                      {cell.ok ? cell.v : 'n/a'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </Reveal>
-
-      {/* Pipeline flow: the chaining concept */}
-      <Reveal delay={0.2}>
-        <div className="mx-auto mt-14 max-w-[680px]">
-          <div className="flex items-center justify-between">
-            {(['Domain', 'Company Info', 'Email', 'Lead Score'] as const).map((name, i) => (
-              <div key={name} className="flex items-center">
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className={`flex h-[36px] items-center rounded-xl border px-4 ${
-                    i === 2
-                      ? 'border-[#6366F1]/20 bg-[#6366F1]/[0.06]'
-                      : 'border-white/[0.06] bg-white/[0.02]'
-                  }`}>
-                    <span className={`text-[12px] font-medium ${
-                      i === 2 ? 'text-[#6366F1]/60' : 'text-white/40'
-                    }`}>{name}</span>
-                  </div>
-                  <span className="text-[9px] text-white/15">
-                    {i === 0 ? 'input' : 'computed'}
-                  </span>
-                </div>
-                {i < 3 && (
-                  <div className="relative mx-2 w-[32px] sm:mx-3 sm:w-[48px]">
-                    <div className="h-px w-full bg-white/[0.06]" />
-                    <div className="absolute inset-0 flex items-center overflow-hidden">
-                      <div
-                        className="h-[2px] w-[14px] rounded-full"
-                        style={{
-                          background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.35), transparent)',
-                          animation: `pipe-flow ${2 + i * 0.4}s ease-in-out ${i * 0.6}s infinite`,
-                        }}
-                      />
+            {/* Column headers with code */}
+            <div className="flex">
+              {GRID_COLS.map((col, ci) => (
+                <div key={col.name} className="flex items-stretch">
+                  <div className={`flex flex-col ${ci < GRID_COLS.length - 1 ? 'border-r border-white/[0.04]' : ''}`} style={{ width: col.w }}>
+                    {/* Column name */}
+                    <div className="flex items-center gap-1.5 border-b border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
+                      <span className="text-[11px] font-semibold text-white/50">{col.name}</span>
+                      {col.kind === 'computed' && (
+                        <span className="ml-auto font-mono text-[8px] font-bold italic text-[#6366F1]/40">fx</span>
+                      )}
+                    </div>
+                    {/* Code snippet (for computed) or "input" label */}
+                    <div className="border-b border-white/[0.06] bg-[#0A0A0A] px-3 py-2">
+                      {col.code ? (
+                        <pre className="font-mono text-[9.5px] leading-[1.5] text-[#DCDCAA]/40 whitespace-pre-wrap">{col.code}</pre>
+                      ) : (
+                        <span className="text-[9.5px] italic text-white/12">manual input</span>
+                      )}
                     </div>
                   </div>
-                )}
+                  {/* Flow connector between columns */}
+                  {ci < GRID_COLS.length - 1 && (
+                    <div className="relative flex w-0 items-start" style={{ marginTop: 36 }}>
+                      <div className="absolute -left-[1px] top-[10px] z-10 h-[2px] w-[2px]">
+                        <div
+                          className="h-[2px] w-[10px] rounded-full"
+                          style={{
+                            background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.5), transparent)',
+                            animation: `pipe-flow ${2.2 + ci * 0.3}s ease-in-out ${ci * 0.5}s infinite`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Data rows */}
+            {[0, 1, 2, 3].map(ri => (
+              <div key={ri} className="flex border-t border-white/[0.03]" style={{
+                background: ri % 2 ? 'rgba(255,255,255,0.008)' : 'transparent',
+              }}>
+                {GRID_COLS.map((col, ci) => {
+                  const val = col.values[ri]
+                  const isErr = val === null
+                  return (
+                    <div
+                      key={col.name}
+                      className={`flex items-center gap-1.5 px-3 py-[7px] ${ci < GRID_COLS.length - 1 ? 'border-r border-white/[0.04]' : ''}`}
+                      style={{ width: col.w }}
+                    >
+                      {col.kind === 'computed' && !isErr && (
+                        <svg className="size-[9px] shrink-0 text-emerald-400/40" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <polyline points="3.5 8.5 6.5 11.5 12.5 5" />
+                        </svg>
+                      )}
+                      {col.kind === 'computed' && isErr && (
+                        <svg className="size-[9px] shrink-0 text-red-400/40" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <line x1="4.5" y1="4.5" x2="11.5" y2="11.5" /><line x1="11.5" y1="4.5" x2="4.5" y2="11.5" />
+                        </svg>
+                      )}
+                      <span className={`truncate text-[10.5px] ${col.mono ? 'font-mono text-[10px]' : ''} ${isErr ? 'text-white/12' : 'text-white/40'}`}>
+                        {isErr ? '\u2014' : val}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             ))}
           </div>
         </div>
       </Reveal>
 
-      <Reveal delay={0.25}>
-        <p className="mx-auto mt-10 max-w-[440px] text-center text-[13.5px] leading-[1.7] text-white/25">
-          Chain columns together. Output of one feeds into the next.
-          AI writes the code. You just describe what it should do.
+      <Reveal delay={0.2}>
+        <p className="mx-auto mt-12 max-w-[460px] text-center text-[13.5px] leading-[1.75] text-white/30">
+          Find emails. Enrich companies. Score leads. Scrape websites.
+          Any logic, any API, any column.
+          <br />
+          <span className="text-white/20">
+            Chain them together. Output of one feeds into the next.
+            AI writes the code. You just describe what it should do.
+          </span>
         </p>
       </Reveal>
     </section>
