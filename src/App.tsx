@@ -1,215 +1,218 @@
 import { useState, useEffect, useRef } from 'react'
-import {
-  Apple, Monitor, ChevronRight, Zap, Table2,
-  Check, Loader2, CircleDot, Bot, Lock, Globe, Sparkles,
-} from 'lucide-react'
 
-// ---------------------------------------------------------------------------
-// Data
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
+// Demo data
+// ─────────────────────────────────────────────────────────────────────────────
 
-const COMPANIES = [
-  { name: 'Stripe', domain: 'stripe.com', email: 'alex@stripe.com', score: 95 },
-  { name: 'Linear', domain: 'linear.app', email: 'karri@linear.app', score: 92 },
-  { name: 'Notion', domain: 'notion.so', email: 'ivan@notion.so', score: 78 },
-  { name: 'Vercel', domain: 'vercel.com', email: 'guillermo@vercel.com', score: 90 },
-  { name: 'Figma', domain: 'figma.com', email: 'dylan@figma.com', score: 88 },
-  { name: 'Resend', domain: 'resend.com', email: 'zeno@resend.com', score: 82 },
-  { name: 'Clerk', domain: 'clerk.com', email: 'colin@clerk.com', score: 87 },
+const ROWS = [
+  { company: 'Stripe', domain: 'stripe.com', title: 'Head of Sales', email: 'alex.m@stripe.com', score: 95 },
+  { company: 'Linear', domain: 'linear.app', title: 'VP Revenue', email: 'karri.s@linear.app', score: 92 },
+  { company: 'Notion', domain: 'notion.so', title: 'CRO', email: 'ivan.z@notion.so', score: 78 },
+  { company: 'Vercel', domain: 'vercel.com', title: 'Dir. Partnerships', email: 'g.rauch@vercel.com', score: 90 },
+  { company: 'Figma', domain: 'figma.com', title: 'Head of Growth', email: 'dylan.f@figma.com', score: 88 },
+  { company: 'Resend', domain: 'resend.com', title: 'CEO', email: 'zeno.r@resend.com', score: 82 },
+  { company: 'Clerk', domain: 'clerk.com', title: 'VP Sales', email: 'colin.r@clerk.com', score: 87 },
+  { company: 'Neon', domain: 'neon.tech', title: 'Head of BD', email: 'nikita.s@neon.tech', score: 91 },
 ]
 
-const USER_MESSAGE = 'Find emails for all prospects using Prospeo'
+const USER_MSG = 'Find emails and score leads for all 8 prospects using Prospeo'
 
-const CLAUDE_LINES = [
-  "I'll set up an enrichment pipeline using Prospeo's",
-  'email finder for your Prospects table.',
-  '',
-  'Creating computed field "Email" with Prospeo...',
-  'Running email enrichment on 7 rows...',
+interface TermLine { text: string; style: 'dim' | 'normal' | 'success' | 'bold' }
+
+const CLAUDE_1: TermLine[] = [
+  { text: "I'll set up the enrichment pipeline using Prospeo", style: 'normal' },
+  { text: 'for your Prospects table.', style: 'normal' },
+  { text: '', style: 'dim' },
+  { text: 'Creating field "Email" with Prospeo email finder...', style: 'dim' },
+  { text: 'Creating field "Lead Score" with scoring logic...', style: 'dim' },
+  { text: 'Running on 8 rows...', style: 'dim' },
 ]
 
-const CLAUDE_LINES_2 = [
-  'Email enrichment complete: 7/7 succeeded',
-  '',
-  'Running lead score computation...',
+const CLAUDE_2: TermLine[] = [
+  { text: '\u2713 Email: 8/8 found', style: 'success' },
+  { text: 'Running lead scores...', style: 'dim' },
 ]
 
-const CLAUDE_LINES_3 = [
-  'Lead scoring complete: 7/7 succeeded',
-  '',
-  'All 7 prospects fully enriched.',
+const CLAUDE_3: TermLine[] = [
+  { text: '\u2713 Scoring: 8/8 complete', style: 'success' },
+  { text: '', style: 'dim' },
+  { text: 'Done. All 8 prospects enriched.', style: 'bold' },
 ]
 
-// ---------------------------------------------------------------------------
-// Animation timing (in ticks, each tick = 70ms)
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
+// Animation timeline (ticks @ 65ms)
+// ─────────────────────────────────────────────────────────────────────────────
 
-const TICK_MS = 70
-const TOTAL_TICKS = 240
+const T = 65
+const LOOP = 260
 
-const USER_MSG_START = 5
-const USER_MSG_END = 30
+const TYPE_START = 5
+const TYPE_END = 35
+const C1_START = 42
+const ROW_START = 48
+const ROW_GAP = 3
+const EMAIL_PEND = 72
+const EMAIL_GO = 78
+const EMAIL_STEP = 5
+const EMAIL_DONE = 9
+const C2_START = 130
+const SCORE_GO = 138
+const SCORE_STEP = 4
+const SCORE_DONE = 6
+const C3_START = 175
+const FADE = 230
 
-const CLAUDE_1_START = 35
-const ROWS_START = 42
-const ROW_STAGGER = 3
+type S = 'none' | 'wait' | 'run' | 'ok'
 
-const EMAIL_PENDING = 62
-const EMAIL_RUN_START = 68
-const EMAIL_RUN_STAGGER = 5
-const EMAIL_SUCCESS_DELAY = 9
-
-const CLAUDE_2_START = 120
-const SCORE_START = 130
-const SCORE_STAGGER = 4
-
-const CLAUDE_3_START = 160
-
-// Fade out for loop reset
-const FADE_OUT_START = 210
-
-type CellStatus = 'hidden' | 'pending' | 'running' | 'success'
-
-function getCellStatus(
-  rowIndex: number,
-  column: 'email' | 'score',
-  tick: number,
-): CellStatus {
-  if (column === 'email') {
-    const successTick = EMAIL_RUN_START + rowIndex * EMAIL_RUN_STAGGER + EMAIL_SUCCESS_DELAY
-    const runTick = EMAIL_RUN_START + rowIndex * EMAIL_RUN_STAGGER
-    if (tick >= successTick) return 'success'
-    if (tick >= runTick) return 'running'
-    if (tick >= EMAIL_PENDING) return 'pending'
-    return 'hidden'
+function cellState(row: number, col: 'email' | 'score', tick: number): S {
+  if (col === 'email') {
+    const ok = EMAIL_GO + row * EMAIL_STEP + EMAIL_DONE
+    const go = EMAIL_GO + row * EMAIL_STEP
+    if (tick >= ok) return 'ok'
+    if (tick >= go) return 'run'
+    if (tick >= EMAIL_PEND) return 'wait'
+    return 'none'
   }
-  const scoreTick = SCORE_START + rowIndex * SCORE_STAGGER
-  if (tick >= scoreTick + 6) return 'success'
-  if (tick >= scoreTick) return 'running'
-  if (tick >= SCORE_START - 5) return 'pending'
-  return 'hidden'
+  const ok = SCORE_GO + row * SCORE_STEP + SCORE_DONE
+  const go = SCORE_GO + row * SCORE_STEP
+  if (tick >= ok) return 'ok'
+  if (tick >= go) return 'run'
+  if (tick >= SCORE_GO - 6) return 'wait'
+  return 'none'
 }
 
-function getVisibleUserChars(tick: number): number {
-  if (tick < USER_MSG_START) return 0
-  if (tick >= USER_MSG_END) return USER_MESSAGE.length
-  const progress = (tick - USER_MSG_START) / (USER_MSG_END - USER_MSG_START)
-  return Math.floor(progress * USER_MESSAGE.length)
+function typedChars(tick: number): number {
+  if (tick < TYPE_START) return 0
+  if (tick >= TYPE_END) return USER_MSG.length
+  return Math.floor(((tick - TYPE_START) / (TYPE_END - TYPE_START)) * USER_MSG.length)
 }
 
-function getVisibleClaudeLines(tick: number, startTick: number, lines: string[]): number {
-  if (tick < startTick) return 0
-  const elapsed = tick - startTick
-  return Math.min(lines.length, Math.floor(elapsed / 3) + 1)
+function visLines(tick: number, start: number, lines: TermLine[]): number {
+  if (tick < start) return 0
+  return Math.min(lines.length, Math.floor((tick - start) / 3) + 1)
 }
 
-// ---------------------------------------------------------------------------
-// Window chrome
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
+// Platform icons (inline SVG, no library)
+// ─────────────────────────────────────────────────────────────────────────────
 
-function WindowChrome() {
+function AppleLogo({ className }: { className?: string }) {
   return (
-    <div className="flex h-11 items-center gap-2 border-b border-white/[0.06] bg-[#1A1A1C] px-4">
-      <div className="flex gap-2">
-        <div className="size-3 rounded-full bg-[#FF5F57] shadow-[inset_0_-0.5px_0.5px_rgba(0,0,0,0.2)]" />
-        <div className="size-3 rounded-full bg-[#FEBC2E] shadow-[inset_0_-0.5px_0.5px_rgba(0,0,0,0.2)]" />
-        <div className="size-3 rounded-full bg-[#28C840] shadow-[inset_0_-0.5px_0.5px_rgba(0,0,0,0.2)]" />
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M11.182 0c.2 1.095-.32 2.196-.953 2.965-.648.77-1.713 1.366-2.755 1.288-.222-1.06.37-2.178.97-2.87C9.1.612 10.227.04 11.182 0zm2.73 5.554c-.133.08-2.243 1.306-2.22 3.7.026 2.87 2.566 3.835 2.593 3.846-.02.066-.4 1.38-1.34 2.738-.806 1.17-1.643 2.342-2.966 2.365-.647.013-1.08-.173-1.53-.366-.468-.2-.955-.41-1.678-.41-.764 0-1.272.215-1.762.422-.432.183-.85.36-1.427.385-1.274.048-2.242-1.267-3.06-2.432C-.62 13.028-1.37 9.156.646 6.533c.995-1.295 2.78-2.117 4.713-2.14.724-.013 1.426.266 2.04.51.47.187.885.352 1.22.352.293 0 .692-.157 1.168-.34.724-.28 1.606-.62 2.527-.528.633.025 2.413.254 3.556 1.917l.042.053z" />
+    </svg>
+  )
+}
+
+function WindowsLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="currentColor">
+      <path d="M0 2.303l6.543-.89v6.322H0V2.303zm7.2-.98L15.994.017v7.718H7.2V1.323zM16 8.5v7.717l-8.8-1.21V8.5H16zM6.543 14.83L0 13.96V8.5h6.543v6.33z" />
+    </svg>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Demo: Window chrome
+// ─────────────────────────────────────────────────────────────────────────────
+
+function Chrome() {
+  return (
+    <div className="flex h-10 items-center border-b border-white/[0.06] bg-[#171717] px-4 select-none">
+      <div className="flex gap-[7px]">
+        <i className="block size-[10px] rounded-full bg-[#FF5F57]" />
+        <i className="block size-[10px] rounded-full bg-[#FEBC2E]" />
+        <i className="block size-[10px] rounded-full bg-[#28C840]" />
       </div>
-      <div className="flex-1 text-center">
-        <span className="text-[11px] font-medium text-white/30 tracking-wide">GTM Pilot -- prospects.db</span>
-      </div>
-      <div className="w-[60px]" />
+      <span className="flex-1 text-center text-[11px] tracking-wide text-white/20">
+        prospects.db
+      </span>
+      <div className="w-[50px]" />
     </div>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Sidebar
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
+// Demo: Sidebar
+// ─────────────────────────────────────────────────────────────────────────────
 
-function DemoSidebar({ tick }: { tick: number }) {
-  const rowCount = tick >= ROWS_START + COMPANIES.length * ROW_STAGGER
-    ? COMPANIES.length
-    : tick >= ROWS_START
-      ? Math.min(COMPANIES.length, Math.floor((tick - ROWS_START) / ROW_STAGGER) + 1)
-      : COMPANIES.length
+function Sidebar({ tick }: { tick: number }) {
+  const n = tick >= ROW_START + ROWS.length * ROW_GAP
+    ? ROWS.length
+    : tick >= ROW_START
+      ? Math.min(ROWS.length, Math.floor((tick - ROW_START) / ROW_GAP) + 1)
+      : ROWS.length
 
   return (
-    <div className="flex w-[170px] shrink-0 flex-col border-r border-white/[0.06] bg-[#131315]">
-      {/* Tables */}
-      <div className="px-3 pt-3.5 pb-2">
-        <div className="mb-2 text-[10px] font-semibold tracking-widest text-white/25 uppercase">Tables</div>
-        <div className="flex items-center gap-2.5 rounded-lg bg-white/[0.06] px-2.5 py-2">
-          <Table2 className="size-3.5 text-indigo-400" />
-          <span className="text-[11px] font-medium text-white/80">Prospects</span>
-          <span className="ml-auto rounded bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-medium text-white/30 tabular-nums">
-            {rowCount}
-          </span>
+    <div className="flex w-[154px] shrink-0 flex-col border-r border-white/[0.06] bg-[#111]">
+      <div className="px-3 pt-3">
+        <p className="mb-2 text-[9px] font-medium tracking-[0.12em] text-white/20 uppercase">Tables</p>
+        <div className="flex items-center gap-2 rounded-md bg-white/[0.06] px-2.5 py-[7px]">
+          <span className="size-[6px] rounded-sm bg-white/30" />
+          <span className="text-[11px] font-medium text-white/70">Prospects</span>
+          <span className="ml-auto font-mono text-[10px] text-white/20">{n}</span>
         </div>
       </div>
-
-      {/* Extensions */}
-      <div className="mt-auto border-t border-white/[0.06] px-3 pt-3 pb-3">
-        <div className="mb-2 text-[10px] font-semibold tracking-widest text-white/25 uppercase">Extensions</div>
-        <div className="space-y-0.5">
-          <ExtensionRow name="Prospeo" connected />
-          <ExtensionRow name="Apollo" connected />
-          <ExtensionRow name="Firecrawl" connected={false} />
-          <ExtensionRow name="Hunter" connected={false} />
-        </div>
+      <div className="mt-auto border-t border-white/[0.06] px-3 py-3">
+        <p className="mb-2 text-[9px] font-medium tracking-[0.12em] text-white/20 uppercase">Connected</p>
+        {['Prospeo', 'Apollo'].map(name => (
+          <div key={name} className="flex items-center gap-2 py-[5px]">
+            <span className="size-[5px] rounded-full bg-emerald-400/80" />
+            <span className="text-[11px] text-white/50">{name}</span>
+          </div>
+        ))}
+        {['Firecrawl'].map(name => (
+          <div key={name} className="flex items-center gap-2 py-[5px]">
+            <span className="size-[5px] rounded-full bg-white/10" />
+            <span className="text-[11px] text-white/25">{name}</span>
+          </div>
+        ))}
       </div>
     </div>
   )
 }
 
-function ExtensionRow({ name, connected }: { name: string; connected: boolean }) {
-  return (
-    <div className="flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-white/[0.03]">
-      <div className={`size-[6px] rounded-full ${connected ? 'bg-emerald-400 shadow-[0_0_4px_rgba(16,185,129,0.4)]' : 'bg-white/15'}`} />
-      <span className={`text-[11px] ${connected ? 'text-white/60' : 'text-white/30'}`}>{name}</span>
-    </div>
-  )
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Demo: Grid
+// ─────────────────────────────────────────────────────────────────────────────
 
-// ---------------------------------------------------------------------------
-// Grid
-// ---------------------------------------------------------------------------
+const COLS: readonly { key: string; label: string; w: string; mono?: boolean; computed?: boolean }[] = [
+  { key: 'company', label: 'Company', w: 'w-[88px]' },
+  { key: 'domain', label: 'Domain', w: 'w-[96px]', mono: true },
+  { key: 'title', label: 'Title', w: 'w-[116px]' },
+  { key: 'email', label: 'Email', w: 'w-[148px]', mono: true, computed: true },
+  { key: 'score', label: 'Score', w: 'w-[62px]', computed: true },
+]
 
-function DemoGrid({ tick }: { tick: number }) {
+function Grid({ tick }: { tick: number }) {
   return (
-    <div className="flex flex-1 flex-col overflow-hidden bg-[#0E0E10]">
-      {/* Column headers */}
-      <div className="flex shrink-0 border-b border-white/[0.06] bg-[#16161A]">
-        <div className="flex w-9 shrink-0 items-center justify-center border-r border-white/[0.05] py-2.5 text-[10px] text-white/15">#</div>
-        <HeaderCell label="Company" width="w-[105px]" />
-        <HeaderCell label="Domain" width="w-[115px]" />
-        <HeaderCell label="Email" width="w-[180px]" computed />
-        <HeaderCell label="Lead Score" width="w-[95px]" computed last />
+    <div className="flex flex-1 flex-col overflow-hidden bg-[#0D0D0D]">
+      {/* Header */}
+      <div className="flex shrink-0 border-b border-white/[0.06] bg-[#141414]">
+        <div className="w-7 shrink-0 border-r border-white/[0.04]" />
+        {COLS.map((c, i) => (
+          <div key={c.key} className={`flex items-center px-2.5 py-[9px] ${c.w} ${i < COLS.length - 1 ? 'border-r border-white/[0.04]' : ''}`}>
+            {c.computed && <span className="mr-1 text-[8px] text-violet-400/40">f</span>}
+            <span className="text-[10px] font-medium text-white/30">{c.label}</span>
+          </div>
+        ))}
       </div>
 
       {/* Rows */}
       <div className="flex-1 overflow-hidden">
-        {COMPANIES.map((company, i) => {
-          const rowAppearTick = ROWS_START + i * ROW_STAGGER
-          const visible = tick >= rowAppearTick
-          if (!visible) return null
-
-          const emailStatus = getCellStatus(i, 'email', tick)
-          const scoreStatus = getCellStatus(i, 'score', tick)
-
+        {ROWS.map((row, i) => {
+          if (tick < ROW_START + i * ROW_GAP) return null
+          const es = cellState(i, 'email', tick)
+          const ss = cellState(i, 'score', tick)
           return (
-            <div
-              key={company.name}
-              className="animate-slide-in flex border-b border-white/[0.04] transition-colors"
-              style={{ backgroundColor: i % 2 === 1 ? 'rgba(255,255,255,0.01)' : 'transparent' }}
-            >
-              <div className="flex w-9 shrink-0 items-center justify-center border-r border-white/[0.05] py-2.5 text-[10px] text-white/15 tabular-nums">
-                {i + 1}
-              </div>
-              <DataCell value={company.name} width="w-[105px]" />
-              <DataCell value={company.domain} width="w-[115px]" mono />
-              <ComputedCell value={company.email} status={emailStatus} width="w-[180px]" mono />
-              <ComputedCell value={company.score.toString()} status={scoreStatus} width="w-[95px]" last />
+            <div key={i} className="anim-row flex border-b border-white/[0.03]"
+              style={{ background: i % 2 ? 'rgba(255,255,255,0.008)' : 'transparent' }}>
+              <div className="flex w-7 shrink-0 items-center justify-center border-r border-white/[0.04] text-[10px] text-white/12 tabular-nums">{i + 1}</div>
+              <Cell w="w-[88px]" value={row.company} border />
+              <Cell w="w-[96px]" value={row.domain} mono border />
+              <Cell w="w-[116px]" value={row.title} border />
+              <Computed w="w-[148px]" value={row.email} state={es} mono border />
+              <Computed w="w-[62px]" value={String(row.score)} state={ss} />
             </div>
           )
         })}
@@ -218,442 +221,257 @@ function DemoGrid({ tick }: { tick: number }) {
   )
 }
 
-function HeaderCell({ label, width, computed, last }: { label: string; width: string; computed?: boolean; last?: boolean }) {
+function Cell({ w, value, mono, border }: { w: string; value: string; mono?: boolean; border?: boolean }) {
   return (
-    <div className={`flex items-center gap-1.5 px-3 py-2.5 ${width} ${!last ? 'border-r border-white/[0.05]' : ''}`}>
-      {computed && <Zap className="size-2.5 text-indigo-400/50" />}
-      <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wide">{label}</span>
+    <div className={`flex items-center px-2.5 py-[8px] ${w} ${border ? 'border-r border-white/[0.04]' : ''}`}>
+      <span className={`truncate text-[11px] text-white/60 ${mono ? 'font-mono text-[10px]' : ''}`}>{value}</span>
     </div>
   )
 }
 
-function DataCell({ value, width, mono }: { value: string; width: string; mono?: boolean }) {
+function Computed({ w, value, state, mono, border }: { w: string; value: string; state: S; mono?: boolean; border?: boolean }) {
   return (
-    <div className={`flex items-center border-r border-white/[0.05] px-3 py-2.5 ${width}`}>
-      <span className={`text-[11px] text-white/75 ${mono ? 'font-mono text-[10.5px]' : ''}`}>{value}</span>
-    </div>
-  )
-}
-
-function ComputedCell({ value, status, width, mono, last }: {
-  value: string
-  status: CellStatus
-  width: string
-  mono?: boolean
-  last?: boolean
-}) {
-  return (
-    <div
-      className={`flex items-center gap-1.5 px-3 py-2.5 ${width} ${!last ? 'border-r border-white/[0.05]' : ''} ${
-        status === 'success' ? 'animate-success-flash' : ''
-      } ${status === 'running' ? 'bg-indigo-500/[0.03]' : ''}`}
-    >
-      {status === 'hidden' && (
-        <span className="text-[11px] text-white/10">--</span>
+    <div className={`flex items-center gap-1.5 px-2.5 py-[8px] ${w} ${border ? 'border-r border-white/[0.04]' : ''} ${state === 'ok' ? 'anim-flash' : ''}`}>
+      {state === 'none' && <span className="text-[10px] text-white/8">&mdash;</span>}
+      {state === 'wait' && <span className="inline-block size-[5px] rounded-full bg-white/15 anim-pulse" />}
+      {state === 'run' && (
+        <svg className="size-3 text-violet-400/70 anim-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="8" cy="8" r="6" strokeOpacity="0.2" />
+          <path d="M14 8a6 6 0 0 0-6-6" strokeLinecap="round" />
+        </svg>
       )}
-      {status === 'pending' && (
-        <CircleDot className="size-3 text-white/15 animate-pulse-subtle" />
-      )}
-      {status === 'running' && (
-        <Loader2 className="size-3 text-indigo-400 animate-spin-slow" />
-      )}
-      {status === 'success' && (
+      {state === 'ok' && (
         <>
-          <Check className="size-3 shrink-0 text-emerald-400" />
-          <span className={`animate-value-in text-[11px] truncate text-white/80 ${mono ? 'font-mono text-[10.5px]' : 'tabular-nums font-medium'}`}>
-            {value}
-          </span>
+          <svg className="size-3 shrink-0 text-emerald-400/70" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <polyline points="3.5 8.5 6.5 11.5 12.5 5" />
+          </svg>
+          <span className={`anim-value truncate text-[11px] text-white/70 ${mono ? 'font-mono text-[10px]' : 'tabular-nums'}`}>{value}</span>
         </>
       )}
     </div>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Terminal
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
+// Demo: Terminal
+// ─────────────────────────────────────────────────────────────────────────────
 
-function DemoTerminal({ tick }: { tick: number }) {
-  const bottomRef = useRef<HTMLDivElement>(null)
+function Term({ tick }: { tick: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => { ref.current?.scrollIntoView({ behavior: 'smooth' }) }, [tick])
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [tick])
-
-  const userChars = getVisibleUserChars(tick)
-  const showUserMsg = tick >= USER_MSG_START
-  const userDone = tick >= USER_MSG_END
-
-  const claude1Lines = getVisibleClaudeLines(tick, CLAUDE_1_START, CLAUDE_LINES)
-  const claude2Lines = getVisibleClaudeLines(tick, CLAUDE_2_START, CLAUDE_LINES_2)
-  const claude3Lines = getVisibleClaudeLines(tick, CLAUDE_3_START, CLAUDE_LINES_3)
+  const chars = typedChars(tick)
+  const show = tick >= TYPE_START
+  const done = tick >= TYPE_END
+  const c1 = visLines(tick, C1_START, CLAUDE_1)
+  const c2 = visLines(tick, C2_START, CLAUDE_2)
+  const c3 = visLines(tick, C3_START, CLAUDE_3)
 
   return (
-    <div className="flex w-[260px] shrink-0 flex-col border-l border-white/[0.06] bg-[#0C0C0E]">
-      {/* Terminal header */}
-      <div className="flex items-center gap-2 border-b border-white/[0.06] px-3 py-2.5">
-        <div className="flex size-4 items-center justify-center rounded bg-orange-500/10">
-          <Sparkles className="size-2.5 text-orange-400/60" />
-        </div>
-        <span className="text-[10px] font-medium text-white/30">Claude Code</span>
+    <div className="flex w-[240px] shrink-0 flex-col border-l border-white/[0.06] bg-[#0A0A0A]">
+      <div className="border-b border-white/[0.06] px-3 py-2">
+        <span className="text-[10px] font-medium text-white/20">claude</span>
       </div>
-
-      {/* Terminal content */}
-      <div className="flex-1 overflow-y-auto p-3 font-mono text-[10px] leading-[17px]">
-        {/* Prompt line decoration */}
-        {!showUserMsg && (
-          <div className="text-white/15">
-            <span className="text-indigo-400/40">{'> '}</span>
-            <span className="cursor-blink">|</span>
-          </div>
+      <div className="flex-1 overflow-y-auto px-3 py-3 font-mono text-[10px] leading-[17px]">
+        {!show && (
+          <span className="text-white/15">{'\u276f '}<span className="anim-blink text-white/30">_</span></span>
         )}
-
-        {/* User message */}
-        {showUserMsg && (
-          <div className="animate-terminal-in mb-3">
-            <span className="text-indigo-400">{'> '}</span>
-            <span className="text-white/85">{USER_MESSAGE.slice(0, userChars)}</span>
-            {!userDone && <span className="cursor-blink text-indigo-300">|</span>}
-          </div>
-        )}
-
-        {/* Claude response 1 */}
-        {claude1Lines > 0 && (
-          <div className="mb-3 rounded-md bg-white/[0.02] px-2.5 py-2">
-            <div className="mb-1.5 flex items-center gap-1.5">
-              <Bot className="size-3 text-orange-400/60" />
-              <span className="text-[9px] font-medium text-orange-400/40">Claude</span>
-            </div>
-            {CLAUDE_LINES.slice(0, claude1Lines).map((line, i) => (
-              <div key={i} className="animate-terminal-in text-white/55">
-                {line || '\u00A0'}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Claude response 2 */}
-        {claude2Lines > 0 && (
+        {show && (
           <div className="mb-3">
-            {CLAUDE_LINES_2.slice(0, claude2Lines).map((line, i) => (
-              <div key={i} className="animate-terminal-in">
-                {i === 0 ? (
-                  <span className="text-emerald-400/90">{'  ✓ '}{line}</span>
-                ) : (
-                  <span className="text-white/55">{line || '\u00A0'}</span>
-                )}
-              </div>
-            ))}
+            <span className="text-violet-400/70">{'\u276f '}</span>
+            <span className="text-white/70">{USER_MSG.slice(0, chars)}</span>
+            {!done && <span className="anim-blink text-violet-300/60">_</span>}
           </div>
         )}
-
-        {/* Claude response 3 */}
-        {claude3Lines > 0 && (
+        {c1 > 0 && (
           <div className="mb-3">
-            {CLAUDE_LINES_3.slice(0, claude3Lines).map((line, i) => (
-              <div key={i} className="animate-terminal-in">
-                {i === 0 ? (
-                  <span className="text-emerald-400/90">{'  ✓ '}{line}</span>
-                ) : i === 2 ? (
-                  <span className="font-medium text-white/80">{line}</span>
-                ) : (
-                  <span className="text-white/55">{line || '\u00A0'}</span>
-                )}
-              </div>
+            {CLAUDE_1.slice(0, c1).map((l, i) => (
+              <div key={i} className={lineStyle(l.style)}>{l.text || '\u00A0'}</div>
             ))}
           </div>
         )}
-
-        <div ref={bottomRef} />
+        {c2 > 0 && (
+          <div className="mb-3">
+            {CLAUDE_2.slice(0, c2).map((l, i) => (
+              <div key={i} className={lineStyle(l.style)}>{l.text || '\u00A0'}</div>
+            ))}
+          </div>
+        )}
+        {c3 > 0 && (
+          <div className="mb-3">
+            {CLAUDE_3.slice(0, c3).map((l, i) => (
+              <div key={i} className={lineStyle(l.style)}>{l.text || '\u00A0'}</div>
+            ))}
+          </div>
+        )}
+        <div ref={ref} />
       </div>
     </div>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Status bar
-// ---------------------------------------------------------------------------
-
-function DemoStatusBar({ tick }: { tick: number }) {
-  const totalRows = COMPANIES.length
-  const emailsDone = COMPANIES.reduce((c, _, i) =>
-    c + (getCellStatus(i, 'email', tick) === 'success' ? 1 : 0), 0)
-  const scoresDone = COMPANIES.reduce((c, _, i) =>
-    c + (getCellStatus(i, 'score', tick) === 'success' ? 1 : 0), 0)
-
-  let statusText = 'Ready'
-  let statusColor = 'text-white/25'
-  let showSpinner = false
-  let showCheck = false
-
-  if (tick >= CLAUDE_3_START + 8) {
-    statusText = `Pipeline complete: ${totalRows}/${totalRows} enriched`
-    statusColor = 'text-emerald-400/60'
-    showCheck = true
-  } else if (tick >= SCORE_START - 5) {
-    statusText = `Running lead scores... ${scoresDone}/${totalRows}`
-    statusColor = 'text-indigo-400/60'
-    showSpinner = true
-  } else if (tick >= CLAUDE_2_START) {
-    statusText = `Email enrichment complete: ${totalRows}/${totalRows}`
-    statusColor = 'text-emerald-400/60'
-    showCheck = true
-  } else if (tick >= EMAIL_PENDING) {
-    statusText = `Running email enrichment... ${emailsDone}/${totalRows}`
-    statusColor = 'text-indigo-400/60'
-    showSpinner = true
+function lineStyle(s: string): string {
+  switch (s) {
+    case 'success': return 'text-emerald-400/70'
+    case 'bold': return 'text-white/70'
+    case 'dim': return 'text-white/30'
+    default: return 'text-white/45'
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Demo: Status
+// ─────────────────────────────────────────────────────────────────────────────
+
+function Status({ tick }: { tick: number }) {
+  const n = ROWS.length
+  const ed = ROWS.reduce((a, _, i) => a + (cellState(i, 'email', tick) === 'ok' ? 1 : 0), 0)
+  const sd = ROWS.reduce((a, _, i) => a + (cellState(i, 'score', tick) === 'ok' ? 1 : 0), 0)
+
+  let text = ''
+  if (tick >= C3_START + 8) text = `Complete \u00B7 ${n}/${n} enriched`
+  else if (tick >= SCORE_GO - 6) text = `Scoring \u00B7 ${sd}/${n}`
+  else if (tick >= C2_START) text = `Emails done \u00B7 ${n}/${n}`
+  else if (tick >= EMAIL_PEND) text = `Finding emails \u00B7 ${ed}/${n}`
+  else text = 'Ready'
 
   return (
-    <div className="flex h-7 items-center justify-between border-t border-white/[0.06] bg-[#131315] px-4 text-[10px]">
-      <div className="flex items-center gap-2">
-        {showSpinner && <Loader2 className="size-2.5 text-indigo-400 animate-spin-slow" />}
-        {showCheck && <Check className="size-2.5 text-emerald-400" />}
-        <span className={statusColor}>{statusText}</span>
-      </div>
-      <div className="flex items-center gap-3 text-white/20">
-        <span className="flex items-center gap-1"><Globe className="size-2.5" /> 2 connected</span>
-        <span className="flex items-center gap-1"><Lock className="size-2.5" /> Local</span>
-      </div>
+    <div className="flex h-[26px] items-center justify-between border-t border-white/[0.06] bg-[#111] px-4 text-[10px] text-white/15">
+      <span>{text}</span>
+      <span>2 extensions \u00B7 {n} rows</span>
     </div>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Demo Window (the star of the show)
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
+// Demo window
+// ─────────────────────────────────────────────────────────────────────────────
 
-function DemoWindow() {
+function Demo() {
   const [tick, setTick] = useState(0)
-  const [isVisible, setIsVisible] = useState(false)
-  const windowRef = useRef<HTMLDivElement>(null)
+  const [live, setLive] = useState(false)
+  const el = useRef<HTMLDivElement>(null)
 
-  // Start animation when scrolled into view
   useEffect(() => {
-    const el = windowRef.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setIsVisible(true)
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.2 },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
+    const node = el.current
+    if (!node) return
+    const obs = new IntersectionObserver(([e]) => {
+      if (e?.isIntersecting) { setLive(true); obs.disconnect() }
+    }, { threshold: 0.15 })
+    obs.observe(node)
+    return () => obs.disconnect()
   }, [])
 
-  // Tick counter with smooth loop
   useEffect(() => {
-    if (!isVisible) return
-    const id = setInterval(() => {
-      setTick((t) => (t >= TOTAL_TICKS ? 0 : t + 1))
-    }, TICK_MS)
+    if (!live) return
+    const id = setInterval(() => setTick(t => t >= LOOP ? 0 : t + 1), T)
     return () => clearInterval(id)
-  }, [isVisible])
+  }, [live])
 
-  // Fade out near the end of the loop for smooth reset
-  const opacity = tick >= FADE_OUT_START
-    ? Math.max(0, 1 - (tick - FADE_OUT_START) / (TOTAL_TICKS - FADE_OUT_START))
-    : tick < 3
-      ? tick / 3
-      : 1
+  const opacity = tick >= FADE ? Math.max(0, 1 - (tick - FADE) / (LOOP - FADE))
+    : tick < 4 ? tick / 4 : 1
 
   return (
-    <div ref={windowRef} className="relative mx-auto w-full max-w-[900px]">
-      {/* Ambient glow */}
-      <div className="demo-glow" />
+    <div ref={el} className="relative mx-auto w-full max-w-[1060px]">
+      {/* Ambient light */}
+      <div className="pointer-events-none absolute -inset-32 z-0"
+        style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(139,92,246,0.04) 0%, transparent 70%)' }} />
 
-      {/* Reflection/border glow */}
-      <div className="absolute -inset-[1px] z-[5] rounded-xl bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-transparent opacity-60 pointer-events-none" />
-
-      {/* Window with perspective */}
-      <div
-        className="demo-window relative z-10 overflow-hidden rounded-xl border border-white/[0.06] shadow-[0_20px_70px_-15px_rgba(0,0,0,0.7),0_0_40px_-15px_rgba(99,102,241,0.15)]"
+      {/* Window */}
+      <div className="relative z-10 overflow-hidden rounded-xl border border-white/[0.06]"
         style={{
           opacity,
-          transition: tick < 5 ? 'opacity 0.3s ease-out' : 'none',
-        }}
-      >
-        <WindowChrome />
-        <div className="flex h-[370px]">
-          <DemoSidebar tick={tick} />
-          <DemoGrid tick={tick} />
-          <DemoTerminal tick={tick} />
+          boxShadow: '0 24px 80px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset',
+        }}>
+        <Chrome />
+        <div className="flex" style={{ height: 420 }}>
+          <Sidebar tick={tick} />
+          <Grid tick={tick} />
+          <Term tick={tick} />
         </div>
-        <DemoStatusBar tick={tick} />
+        <Status tick={tick} />
       </div>
     </div>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Download buttons
-// ---------------------------------------------------------------------------
-
-function DownloadButtons({ size = 'lg' }: { size?: 'lg' | 'sm' }) {
-  const isLg = size === 'lg'
-
-  return (
-    <div className="flex flex-wrap items-center justify-center gap-3">
-      <a
-        href="#"
-        className={`group flex items-center gap-2.5 rounded-xl bg-white font-medium text-zinc-900 transition-all duration-200 hover:bg-zinc-100 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-[0.98] ${
-          isLg ? 'px-6 py-3 text-[13px]' : 'px-5 py-2.5 text-xs'
-        }`}
-      >
-        <Apple className={isLg ? 'size-[18px]' : 'size-4'} />
-        Download for macOS
-        <ChevronRight className={`${isLg ? 'size-4' : 'size-3.5'} -mr-1 opacity-30 transition-transform duration-200 group-hover:translate-x-0.5`} />
-      </a>
-      <a
-        href="#"
-        className={`group flex items-center gap-2.5 rounded-xl border border-white/[0.10] font-medium text-white/90 transition-all duration-200 hover:border-white/[0.18] hover:bg-white/[0.04] hover:shadow-[0_0_20px_rgba(255,255,255,0.03)] active:scale-[0.98] ${
-          isLg ? 'px-6 py-3 text-[13px]' : 'px-5 py-2.5 text-xs'
-        }`}
-      >
-        <Monitor className={isLg ? 'size-[18px]' : 'size-4'} />
-        Download for Windows
-      </a>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Features
-// ---------------------------------------------------------------------------
-
-const FEATURES = [
-  {
-    icon: Sparkles,
-    title: 'AI-Native',
-    desc: 'Claude Code is your copilot. Describe what you need in plain English -- it writes the functions, runs the pipeline, and fills your table.',
-  },
-  {
-    icon: Zap,
-    title: 'Programmable Columns',
-    desc: 'Every column is a JavaScript function. Chain enrichment APIs, web scrapers, and custom logic into powerful pipelines.',
-  },
-  {
-    icon: Lock,
-    title: 'Runs 100% Locally',
-    desc: 'Your data, your API keys, your machine. One .db file per project. No cloud. No vendor lock-in. You own everything.',
-  },
-]
-
-// ---------------------------------------------------------------------------
-// App
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
+// Page
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function App() {
   return (
     <div className="min-h-screen">
-      {/* Gradient background */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-[#09090B]" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.06)_0%,transparent_70%)]" />
-      </div>
-
       {/* Nav */}
-      <nav className="fixed top-0 right-0 left-0 z-50 border-b border-white/[0.04] bg-[#09090B]/70 backdrop-blur-2xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500/20 to-violet-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-              <Zap className="size-3.5 text-indigo-400" />
-            </div>
-            <span className="text-sm font-semibold tracking-tight">GTM Pilot</span>
-          </div>
-          <div className="flex items-center gap-6">
-            <a href="#demo" className="text-[13px] text-white/35 transition-colors hover:text-white/70">Demo</a>
-            <a href="#features" className="text-[13px] text-white/35 transition-colors hover:text-white/70">Features</a>
-            <a
-              href="#"
-              className="rounded-lg bg-white/[0.07] px-3.5 py-1.5 text-[13px] font-medium text-white/80 transition-all hover:bg-white/[0.12]"
-            >
-              Download
-            </a>
-          </div>
+      <nav className="fixed inset-x-0 top-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-4">
+          <span className="text-[13px] font-semibold tracking-tight text-white/70">GTM Pilot</span>
+          <a href="#download" className="text-[13px] text-white/30 transition-colors hover:text-white/60">Download</a>
         </div>
       </nav>
 
-      {/* Hero */}
-      <main className="relative z-10 pt-32">
-        <section className="mx-auto max-w-6xl px-6 text-center">
-          {/* Badge */}
-          <div className="animate-fade-up mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-1.5">
-            <div className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-            <span className="text-[11px] font-medium text-white/45">Now in early access</span>
-          </div>
-
-          {/* Headline */}
-          <h1 className="animate-fade-up-delay-1 mx-auto max-w-3xl text-[3.2rem] leading-[1.08] font-bold tracking-[-0.025em] sm:text-[4rem]">
-            The IDE for{' '}
-            <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
-              Go-To-Market
-            </span>
+      <main>
+        {/* Hero */}
+        <section className="mx-auto max-w-[1200px] px-6 pt-36 pb-4 text-center">
+          <h1 className="anim-hero-1 text-[3.5rem] leading-[1.06] font-bold tracking-[-0.035em] text-white sm:text-[4.5rem] md:text-[5.5rem]">
+            The IDE for<br />Go-To-Market
           </h1>
-
-          {/* Subtitle */}
-          <p className="animate-fade-up-delay-2 mx-auto mt-5 max-w-[480px] text-[15px] leading-relaxed text-white/35">
-            A programmable spreadsheet where every column is a function.
-            Build AI-powered enrichment pipelines in minutes, not months.
+          <p className="anim-hero-2 mx-auto mt-5 max-w-[420px] text-[15px] leading-[1.6] text-white/30">
+            Every column is a function. Every function calls an API.
+            Your data never leaves your machine.
           </p>
 
-          {/* CTA */}
-          <div className="animate-fade-up-delay-3 mt-9 flex justify-center">
-            <DownloadButtons />
+          {/* Download */}
+          <div id="download" className="anim-hero-3 mt-10 flex flex-wrap items-center justify-center gap-3">
+            <a href="#" className="group flex items-center gap-2.5 rounded-full bg-white px-6 py-2.5 text-[13px] font-medium text-[#0A0A0A] transition-all hover:bg-white/90 active:scale-[0.98]">
+              <AppleLogo className="size-[14px]" />
+              Download for Mac
+            </a>
+            <a href="#" className="group flex items-center gap-2.5 rounded-full border border-white/[0.12] px-6 py-2.5 text-[13px] font-medium text-white/70 transition-all hover:border-white/20 hover:text-white/90 active:scale-[0.98]">
+              <WindowsLogo className="size-[13px]" />
+              Download for Windows
+            </a>
           </div>
         </section>
 
         {/* Demo */}
-        <section id="demo" className="mx-auto mt-20 max-w-6xl px-6 pb-4">
-          <DemoWindow />
+        <section className="anim-hero-4 mx-auto mt-16 max-w-[1200px] px-4">
+          <Demo />
         </section>
 
-        {/* Features */}
-        <section id="features" className="mx-auto mt-32 max-w-4xl px-6">
-          <div className="mb-10 text-center">
-            <h2 className="text-2xl font-bold tracking-tight">Built different</h2>
-            <p className="mt-2 text-sm text-white/30">Everything you need, nothing you don't.</p>
-          </div>
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-            {FEATURES.map((f) => (
-              <div
-                key={f.title}
-                className="group rounded-2xl border border-white/[0.05] bg-white/[0.015] p-6 transition-all duration-300 hover:border-white/[0.10] hover:bg-white/[0.025]"
-              >
-                <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/10 to-violet-500/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all group-hover:from-indigo-500/15 group-hover:to-violet-500/15">
-                  <f.icon className="size-4.5 text-indigo-400" />
-                </div>
-                <h3 className="mb-1.5 text-[13px] font-semibold">{f.title}</h3>
-                <p className="text-[12px] leading-relaxed text-white/35">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Final CTA */}
-        <section className="mx-auto mt-32 max-w-6xl px-6 text-center">
-          <h2 className="mb-3 text-3xl font-bold tracking-tight">Ready to ship faster?</h2>
-          <p className="mb-9 text-sm text-white/35">
-            Download GTM Pilot and build your first pipeline in under 5 minutes.
+        {/* Statement */}
+        <section className="mx-auto mt-32 max-w-[600px] px-6 text-center">
+          <p className="text-[15px] leading-[1.8] text-white/20">
+            GTM Pilot is a desktop app that runs entirely on your computer.
+            Connect your enrichment APIs, describe what you need to Claude,
+            and watch your spreadsheet fill in real time. One <span className="text-white/40">.db</span> file per project.
+            No cloud. No vendor lock-in.
           </p>
-          <div className="flex justify-center">
-            <DownloadButtons size="sm" />
+        </section>
+
+        {/* Second CTA */}
+        <section className="mx-auto mt-24 max-w-[1200px] px-6 text-center">
+          <p className="mb-6 text-[22px] font-semibold tracking-[-0.02em] text-white/80">
+            Try it free
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <a href="#" className="flex items-center gap-2.5 rounded-full bg-white px-6 py-2.5 text-[13px] font-medium text-[#0A0A0A] transition-all hover:bg-white/90 active:scale-[0.98]">
+              <AppleLogo className="size-[14px]" />
+              macOS
+            </a>
+            <a href="#" className="flex items-center gap-2.5 rounded-full border border-white/[0.12] px-6 py-2.5 text-[13px] font-medium text-white/70 transition-all hover:border-white/20 hover:text-white/90 active:scale-[0.98]">
+              <WindowsLogo className="size-[13px]" />
+              Windows
+            </a>
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 mt-32 border-t border-white/[0.04] py-10">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6">
-          <div className="flex items-center gap-2">
-            <Zap className="size-3 text-indigo-400/30" />
-            <span className="text-[11px] font-medium text-white/20">GTM Pilot</span>
-          </div>
-          <span className="text-[11px] text-white/15">Built for the next generation of revenue teams.</span>
+      <footer className="mt-32 border-t border-white/[0.04] py-8">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 text-[11px] text-white/12">
+          <span>GTM Pilot</span>
+          <span>&copy; 2026</span>
         </div>
       </footer>
     </div>
