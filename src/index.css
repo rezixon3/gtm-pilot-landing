@@ -80,6 +80,11 @@
   100% { background: transparent; }
 }
 
+@keyframes variantc-progress {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
