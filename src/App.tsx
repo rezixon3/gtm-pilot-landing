@@ -347,17 +347,33 @@ function Status({ tick }: { tick: number }) {
 // Demo window
 // ─────────────────────────────────────────────────────────────────────────────
 
+const DEMO_W = 1060 // intrinsic width of the demo
+
 function Demo() {
   const [tick, setTick] = useState(0)
   const [live, setLive] = useState(false)
+  const [scale, setScale] = useState(1)
   const el = useRef<HTMLDivElement>(null)
+  const outer = useRef<HTMLDivElement>(null)
+
+  // Responsive scale: shrink demo to fit viewport
+  useEffect(() => {
+    function measure() {
+      if (!outer.current) return
+      const available = outer.current.clientWidth
+      setScale(Math.min(1, available / DEMO_W))
+    }
+    measure()
+    window.addEventListener('resize', measure, { passive: true })
+    return () => window.removeEventListener('resize', measure)
+  }, [])
 
   useEffect(() => {
     const node = el.current
     if (!node) return
     const obs = new IntersectionObserver(([e]) => {
       if (e?.isIntersecting) { setLive(true); obs.disconnect() }
-    }, { threshold: 0.15 })
+    }, { threshold: 0.1 })
     obs.observe(node)
     return () => obs.disconnect()
   }, [])
@@ -371,25 +387,41 @@ function Demo() {
   const opacity = tick >= FADE ? Math.max(0, 1 - (tick - FADE) / (LOOP - FADE))
     : tick < 4 ? tick / 4 : 1
 
+  // Scaled height so the outer container doesn't leave a gap
+  const intrinsicH = 420 + 40 + 26 // content + chrome + status
+  const scaledH = intrinsicH * scale
+
   return (
-    <div ref={el} className="relative mx-auto w-full max-w-[1060px]">
+    <div ref={outer} className="relative mx-auto w-full max-w-[1060px]">
       {/* Ambient light */}
       <div className="pointer-events-none absolute -inset-32 z-0"
         style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(139,92,246,0.04) 0%, transparent 70%)' }} />
 
-      {/* Window */}
-      <div className="relative z-10 overflow-hidden rounded-xl border border-white/[0.06]"
-        style={{
-          opacity,
-          boxShadow: '0 24px 80px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset',
-        }}>
-        <Chrome />
-        <div className="flex" style={{ height: 420 }}>
-          <Sidebar tick={tick} />
-          <Grid tick={tick} />
-          <Term tick={tick} />
+      {/* Scale wrapper */}
+      <div style={{ height: scaledH, position: 'relative' }}>
+        <div
+          ref={el}
+          style={{
+            width: DEMO_W,
+            transformOrigin: 'top left',
+            transform: `scale(${scale})`,
+          }}
+        >
+          {/* Window */}
+          <div className="relative z-10 overflow-hidden rounded-xl border border-white/[0.06]"
+            style={{
+              opacity,
+              boxShadow: '0 24px 80px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset',
+            }}>
+            <Chrome />
+            <div className="flex" style={{ height: 420 }}>
+              <Sidebar tick={tick} />
+              <Grid tick={tick} />
+              <Term tick={tick} />
+            </div>
+            <Status tick={tick} />
+          </div>
         </div>
-        <Status tick={tick} />
       </div>
     </div>
   )
@@ -405,15 +437,17 @@ export function App() {
       {/* Nav */}
       <nav className="fixed inset-x-0 top-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-4">
-          <span className="text-[13px] font-semibold tracking-tight text-white/70">GTM Pilot</span>
+          <div className="flex items-center gap-2">
+            <img src="/icon.svg" alt="" className="h-[18px] w-auto" />
+          </div>
           <a href="#download" className="text-[13px] text-white/30 transition-colors hover:text-white/60">Download</a>
         </div>
       </nav>
 
       <main>
         {/* Hero */}
-        <section className="mx-auto max-w-[1200px] px-6 pt-36 pb-4 text-center">
-          <h1 className="anim-hero-1 text-[3.5rem] leading-[1.06] font-bold tracking-[-0.035em] text-white sm:text-[4.5rem] md:text-[5.5rem]">
+        <section className="mx-auto max-w-[1200px] px-5 pt-28 pb-4 text-center sm:px-6 sm:pt-36">
+          <h1 className="anim-hero-1 text-[2.5rem] leading-[1.06] font-bold tracking-[-0.035em] text-white sm:text-[4.5rem] md:text-[5.5rem]">
             The IDE for<br />Go-To-Market
           </h1>
           <p className="anim-hero-2 mx-auto mt-5 max-w-[420px] text-[15px] leading-[1.6] text-white/30">
@@ -435,12 +469,12 @@ export function App() {
         </section>
 
         {/* Demo */}
-        <section className="anim-hero-4 mx-auto mt-16 max-w-[1200px] px-4">
+        <section className="anim-hero-4 mx-auto mt-12 max-w-[1200px] px-2 sm:mt-16 sm:px-4">
           <Demo />
         </section>
 
         {/* Statement */}
-        <section className="mx-auto mt-32 max-w-[600px] px-6 text-center">
+        <section className="mx-auto mt-20 max-w-[600px] px-5 text-center sm:mt-32 sm:px-6">
           <p className="text-[15px] leading-[1.8] text-white/20">
             GTM Pilot is a desktop app that runs entirely on your computer.
             Connect your enrichment APIs, describe what you need to Claude,
@@ -450,7 +484,7 @@ export function App() {
         </section>
 
         {/* Second CTA */}
-        <section className="mx-auto mt-24 max-w-[1200px] px-6 text-center">
+        <section className="mx-auto mt-16 max-w-[1200px] px-5 text-center sm:mt-24 sm:px-6">
           <p className="mb-6 text-[22px] font-semibold tracking-[-0.02em] text-white/80">
             Try it free
           </p>
@@ -468,9 +502,9 @@ export function App() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-32 border-t border-white/[0.04] py-8">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 text-[11px] text-white/12">
-          <span>GTM Pilot</span>
+      <footer className="mt-20 border-t border-white/[0.04] py-8 sm:mt-32">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-5 text-[11px] text-white/12 sm:px-6">
+          <img src="/icon.svg" alt="GTM Pilot" className="h-3 w-auto opacity-30" />
           <span>&copy; 2026</span>
         </div>
       </footer>
