@@ -149,7 +149,7 @@ function Sidebar({ tick }: { tick: number }) {
     : ROWS.length
 
   return (
-    <div className="flex w-[140px] shrink-0 flex-col border-r border-white/[0.06] bg-[#111]">
+    <div className="flex w-[160px] shrink-0 flex-col border-r border-white/[0.06] bg-[#111]">
       {/* Tables */}
       <div className="px-2.5 pt-3">
         <p className="mb-1.5 px-1 text-[9px] font-medium tracking-[0.1em] text-white/20 uppercase">Tables</p>
@@ -183,11 +183,11 @@ function Sidebar({ tick }: { tick: number }) {
 // ---------------------------------------------------------------------------
 
 const COLS: { key: string; label: string; w: number; mono?: boolean; computed?: boolean }[] = [
-  { key: 'company', label: 'Company',  w: 80 },
-  { key: 'domain',  label: 'Domain',   w: 92,  mono: true },
-  { key: 'title',   label: 'Title',    w: 112 },
-  { key: 'email',   label: 'Email',    w: 148, mono: true, computed: true },
-  { key: 'score',   label: 'Score',    w: 56,  computed: true },
+  { key: 'company', label: 'Company',  w: 100 },
+  { key: 'domain',  label: 'Domain',   w: 110,  mono: true },
+  { key: 'title',   label: 'Title',    w: 130 },
+  { key: 'email',   label: 'Email',    w: 180, mono: true, computed: true },
+  { key: 'score',   label: 'Score',    w: 64,  computed: true },
 ]
 
 function Grid({ tick }: { tick: number }) {
@@ -365,7 +365,7 @@ function Term({ tick }: { tick: number }) {
   const done = tick >= TYPE_END
 
   return (
-    <div className="flex w-[220px] shrink-0 flex-col border-l border-white/[0.06] bg-[#0A0A0A]">
+    <div className="flex w-[260px] shrink-0 flex-col border-l border-white/[0.06] bg-[#0A0A0A]">
       <div className="border-b border-white/[0.06] px-3 py-[6px]">
         <span className="text-[9px] font-medium text-white/20">Terminal</span>
       </div>
@@ -454,8 +454,8 @@ function StatusBar({ tick }: { tick: number }) {
 // Demo window
 // ---------------------------------------------------------------------------
 
-const DEMO_W = 900
-const DEMO_CONTENT_H = 300
+const DEMO_W = 1060
+const DEMO_CONTENT_H = 340
 
 function Demo() {
   const [tick, setTick] = useState(0)
@@ -588,30 +588,24 @@ export function App() {
 
       <main>
         {/* Hero */}
-        <section className="relative mx-auto max-w-[960px] px-6 pt-32 pb-4 text-center sm:pt-40">
+        <section className="relative mx-auto max-w-[960px] px-6 pt-24 pb-2 text-center sm:pt-28">
           <div
-            className="pointer-events-none absolute inset-x-0 -top-40 h-[600px]"
+            className="pointer-events-none absolute inset-x-0 -top-40 h-[500px]"
             style={{ background: 'radial-gradient(ellipse 60% 45% at 50% 0%, rgba(99,102,241,0.06) 0%, transparent 70%)' }}
           />
 
-          <p className="anim-hero-1 mb-5 text-[13px] font-medium text-white/20">The programmable spreadsheet</p>
-
-          <h1 className="anim-hero-2 text-[2.8rem] leading-[1.02] font-bold tracking-[-0.04em] sm:text-[5rem] md:text-[6rem]">
+          <h1 className="anim-hero-1 text-[2.2rem] leading-[1.02] font-bold tracking-[-0.04em] sm:text-[3.5rem] md:text-[4.2rem]">
             <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">
-              Cursor for
-            </span>
-            <br />
-            <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">
-              GTM Engineers
+              Cursor for GTM Engineers
             </span>
           </h1>
 
-          <p className="anim-hero-3 mx-auto mt-6 max-w-[400px] text-[15px] leading-[1.7] text-white/35">
+          <p className="anim-hero-2 mx-auto mt-4 max-w-[380px] text-[14px] leading-[1.7] text-white/35">
             Every column is a function. Every function calls an API.
             Your data never leaves your machine.
           </p>
 
-          <div id="download" className="anim-hero-3 mt-10 flex flex-wrap items-center justify-center gap-3">
+          <div id="download" className="anim-hero-2 mt-7 flex flex-wrap items-center justify-center gap-3">
             <a href="#" className="flex items-center gap-2.5 rounded-full bg-white px-6 py-2.5 text-[13px] font-semibold text-[#0A0A0A] transition-all hover:bg-white/90 active:scale-[0.97]">
               <AppleLogo className="size-[14px]" />
               Download for Mac
@@ -624,7 +618,7 @@ export function App() {
         </section>
 
         {/* Demo */}
-        <section className="anim-hero-4 mx-auto mt-16 max-w-[1000px] px-4 sm:mt-20">
+        <section className="anim-hero-3 mx-auto mt-10 max-w-[1140px] px-4 sm:mt-14">
           <Demo />
         </section>
 
