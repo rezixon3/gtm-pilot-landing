@@ -620,19 +620,15 @@ function PipelineSection() {
         <SectionLabel>Programmable columns</SectionLabel>
         <h2 className="mx-auto max-w-[640px] text-center text-[1.6rem] font-bold leading-[1.1] tracking-[-0.035em] sm:text-[2.5rem]">
           <span className="bg-gradient-to-b from-white/90 to-white/50 bg-clip-text text-transparent">
-            Every column is a function.
-          </span>
-          <br />
-          <span className="bg-gradient-to-b from-white/40 to-white/20 bg-clip-text text-transparent">
-            Every function calls an API.
+            Every column is programmable.
           </span>
         </h2>
       </Reveal>
 
       <Reveal delay={0.05}>
-        <p className="mx-auto mt-6 max-w-[440px] text-center text-[15px] leading-[1.75] text-white/30">
-          Not formulas. Not pre-built integrations. Real code the agent writes
-          for your exact workflow -- chained, batched, and executed at scale.
+        <p className="mx-auto mt-6 max-w-[480px] text-center text-[15px] leading-[1.75] text-white/30">
+          Not a formula. Not a pre-built integration.
+          Real code that calls real APIs.
         </p>
       </Reveal>
 
