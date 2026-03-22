@@ -555,7 +555,7 @@ export function App() {
         {/* Hero */}
         <section className="mx-auto max-w-[1200px] px-5 pt-28 pb-4 text-center sm:px-6 sm:pt-36">
           <h1 className="anim-hero-1 text-[2.5rem] leading-[1.06] font-bold tracking-[-0.035em] text-white sm:text-[4.5rem] md:text-[5.5rem]">
-            The IDE for<br />Go-To-Market
+            Cursor for<br />GTM Engineers
           </h1>
           <p className="anim-hero-2 mx-auto mt-5 max-w-[420px] text-[15px] leading-[1.6] text-white/30">
             Every column is a function. Every function calls an API.
