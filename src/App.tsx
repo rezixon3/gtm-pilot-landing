@@ -535,37 +535,32 @@ function Demo() {
 }
 
 // ---------------------------------------------------------------------------
-// Scroll reveal hook
+// Scroll reveal
 // ---------------------------------------------------------------------------
 
-function useReveal<T extends HTMLElement>(): [React.RefObject<T | null>, boolean] {
-  const ref = useRef<T | null>(null)
+function Reveal({ children, className = '', delay = 0 }: {
+  children: React.ReactNode; className?: string; delay?: number
+}) {
+  const ref = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
   useEffect(() => {
     const node = ref.current
     if (!node) return
     const obs = new IntersectionObserver(
       ([e]) => { if (e?.isIntersecting) { setVisible(true); obs.disconnect() } },
-      { threshold: 0.15 },
+      { threshold: 0.12 },
     )
     obs.observe(node)
     return () => obs.disconnect()
   }, [])
-  return [ref, visible]
-}
-
-function Reveal({ children, className = '', delay = 0 }: {
-  children: React.ReactNode; className?: string; delay?: number
-}) {
-  const [ref, visible] = useReveal<HTMLDivElement>()
   return (
     <div
-      ref={ref as React.RefObject<HTMLDivElement>}
+      ref={ref}
       className={className}
       style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(20px)',
-        transition: `opacity 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}s, transform 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
+        transform: visible ? 'translateY(0)' : 'translateY(16px)',
+        transition: `opacity 0.8s cubic-bezier(0.16,1,0.3,1) ${delay}s, transform 0.8s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
       }}
     >
       {children}
@@ -574,113 +569,54 @@ function Reveal({ children, className = '', delay = 0 }: {
 }
 
 // ---------------------------------------------------------------------------
-// Feature cards data
-// ---------------------------------------------------------------------------
-
-const FEATURES: { icon: React.ReactNode; title: string; desc: string }[] = [
-  {
-    icon: (
-      <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" />
-      </svg>
-    ),
-    title: 'Runs on your machine',
-    desc: 'One .db file per project. Your data, your API keys, your computer. Nothing touches the cloud.',
-  },
-  {
-    icon: (
-      <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
-      </svg>
-    ),
-    title: 'Columns are functions',
-    desc: 'Every computed column is a JavaScript function. Chain enrichment APIs into a pipeline that cascades automatically.',
-  },
-  {
-    icon: (
-      <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-      </svg>
-    ),
-    title: 'AI copilot built in',
-    desc: 'Describe what you need. The agent writes functions, connects APIs, imports data, and runs pipelines for you.',
-  },
-  {
-    icon: (
-      <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-      </svg>
-    ),
-    title: 'Real-time execution',
-    desc: 'Watch cells fill in as functions execute. Batch processing with live status updates across every row.',
-  },
-]
-
-// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 export function App() {
   return (
-    <div className="min-h-screen overflow-x-hidden">
+    <div className="min-h-screen">
       {/* Nav */}
-      <nav className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.04] bg-[#0A0A0A]/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <img src="/icon.svg" alt="" className="h-[18px] w-auto" />
-            <span className="text-[13px] font-semibold tracking-[-0.01em] text-white/70">GTM Pilot</span>
+      <nav className="fixed inset-x-0 top-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[960px] items-center justify-between px-6 py-5">
+          <div className="flex items-center gap-2">
+            <img src="/icon.svg" alt="" className="h-[17px] w-auto" />
+            <span className="text-[13px] font-semibold tracking-[-0.01em] text-white/60">GTM Pilot</span>
           </div>
-          <a
-            href="#download"
-            className="rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-1.5 text-[12px] font-medium text-white/50 transition-all hover:border-white/15 hover:bg-white/[0.07] hover:text-white/80"
-          >
-            Download
-          </a>
+          <a href="#download" className="text-[13px] text-white/25 transition-colors hover:text-white/50">Download</a>
         </div>
       </nav>
 
       <main>
         {/* Hero */}
-        <section className="relative mx-auto max-w-[1200px] px-5 pt-32 pb-4 text-center sm:px-6 sm:pt-40">
-          {/* Ambient hero glow */}
+        <section className="relative mx-auto max-w-[960px] px-6 pt-32 pb-4 text-center sm:pt-40">
           <div
-            className="pointer-events-none absolute inset-x-0 -top-32 h-[600px]"
-            style={{ background: 'radial-gradient(ellipse 50% 40% at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 70%)' }}
+            className="pointer-events-none absolute inset-x-0 -top-40 h-[600px]"
+            style={{ background: 'radial-gradient(ellipse 60% 45% at 50% 0%, rgba(99,102,241,0.06) 0%, transparent 70%)' }}
           />
 
-          <div className="anim-hero-1 mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-1.5">
-            <span className="size-1.5 rounded-full bg-emerald-400" />
-            <span className="text-[12px] font-medium text-white/40">Now in early access</span>
-          </div>
+          <p className="anim-hero-1 mb-5 text-[13px] font-medium text-white/20">The programmable spreadsheet</p>
 
-          <h1 className="anim-hero-2 relative text-[2.8rem] leading-[1.04] font-bold tracking-[-0.04em] sm:text-[4.8rem] md:text-[5.8rem]">
-            <span className="bg-gradient-to-b from-white via-white/90 to-white/50 bg-clip-text text-transparent">
+          <h1 className="anim-hero-2 text-[2.8rem] leading-[1.02] font-bold tracking-[-0.04em] sm:text-[5rem] md:text-[6rem]">
+            <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">
               Cursor for
             </span>
             <br />
-            <span className="bg-gradient-to-b from-white via-white/90 to-white/50 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">
               GTM Engineers
             </span>
           </h1>
 
-          <p className="anim-hero-3 mx-auto mt-6 max-w-[460px] text-[16px] leading-[1.65] text-white/40">
-            A programmable spreadsheet where every column is a function,
-            every function calls an API, and an AI agent orchestrates it all.
+          <p className="anim-hero-3 mx-auto mt-6 max-w-[400px] text-[15px] leading-[1.7] text-white/35">
+            Every column is a function. Every function calls an API.
+            Your data never leaves your machine.
           </p>
 
-          {/* Download */}
-          <div id="download" className="anim-hero-4 mt-10 flex flex-wrap items-center justify-center gap-3">
-            <a
-              href="#"
-              className="group relative flex items-center gap-2.5 rounded-full bg-white px-7 py-3 text-[13px] font-semibold text-[#0A0A0A] shadow-[0_0_20px_rgba(255,255,255,0.15)] transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.25)] active:scale-[0.97]"
-            >
+          <div id="download" className="anim-hero-3 mt-10 flex flex-wrap items-center justify-center gap-3">
+            <a href="#" className="flex items-center gap-2.5 rounded-full bg-white px-6 py-2.5 text-[13px] font-semibold text-[#0A0A0A] transition-all hover:bg-white/90 active:scale-[0.97]">
               <AppleLogo className="size-[14px]" />
               Download for Mac
             </a>
-            <a
-              href="#"
-              className="group flex items-center gap-2.5 rounded-full border border-white/[0.12] bg-white/[0.03] px-7 py-3 text-[13px] font-semibold text-white/70 transition-all hover:border-white/20 hover:bg-white/[0.06] hover:text-white/90 active:scale-[0.97]"
-            >
+            <a href="#" className="flex items-center gap-2.5 rounded-full border border-white/10 px-6 py-2.5 text-[13px] font-medium text-white/50 transition-all hover:border-white/20 hover:text-white/70 active:scale-[0.97]">
               <WindowsLogo className="size-[13px]" />
               Download for Windows
             </a>
@@ -688,103 +624,65 @@ export function App() {
         </section>
 
         {/* Demo */}
-        <section className="anim-hero-4 mx-auto mt-14 max-w-[1000px] px-4 sm:mt-20">
+        <section className="anim-hero-4 mx-auto mt-16 max-w-[1000px] px-4 sm:mt-20">
           <Demo />
         </section>
 
-        {/* Features */}
-        <section className="mx-auto mt-24 max-w-[1000px] px-5 sm:mt-36 sm:px-6">
-          <Reveal className="text-center">
-            <p className="text-[12px] font-semibold tracking-[0.15em] text-[#818CF8]/60 uppercase">Why GTM Pilot</p>
-            <h2 className="mt-3 text-[1.75rem] font-bold tracking-[-0.03em] text-white/90 sm:text-[2.25rem]">
-              Your outbound stack, programmable
-            </h2>
-          </Reveal>
-
-          <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {FEATURES.map((f, i) => (
-              <Reveal key={i} delay={i * 0.08}>
-                <div className="group rounded-2xl border border-white/[0.06] bg-[#111]/80 p-6 transition-all hover:border-white/[0.1] hover:bg-[#151515]/80">
-                  <div className="mb-4 flex size-10 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03] text-[#818CF8]/70">
-                    {f.icon}
-                  </div>
-                  <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-white/80">{f.title}</h3>
-                  <p className="mt-2 text-[13.5px] leading-[1.65] text-white/30">{f.desc}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </section>
-
-        {/* How it works */}
-        <section className="mx-auto mt-24 max-w-[800px] px-5 sm:mt-36 sm:px-6">
-          <Reveal className="text-center">
-            <p className="text-[12px] font-semibold tracking-[0.15em] text-[#818CF8]/60 uppercase">How it works</p>
-            <h2 className="mt-3 text-[1.75rem] font-bold tracking-[-0.03em] text-white/90 sm:text-[2.25rem]">
-              Three steps to enriched data
-            </h2>
-          </Reveal>
-
-          <div className="mt-14 space-y-6">
-            {[
-              { step: '01', title: 'Import your data', desc: 'Drop a CSV or paste from your CRM. Input columns hold your raw data -- company names, domains, job titles.' },
-              { step: '02', title: 'Add computed columns', desc: 'The AI agent writes JavaScript functions that call enrichment APIs -- Apollo, Prospeo, Clearbit, or any custom endpoint.' },
-              { step: '03', title: 'Run and watch', desc: 'Hit run. Every row executes in parallel. Cells fill in with real-time status. Errors are caught, retried, and surfaced.' },
-            ].map((s, i) => (
-              <Reveal key={i} delay={i * 0.1}>
-                <div className="flex gap-5 rounded-2xl border border-white/[0.05] bg-white/[0.015] p-5 sm:p-6">
-                  <span className="shrink-0 font-mono text-[13px] font-bold text-[#6366F1]/40">{s.step}</span>
-                  <div>
-                    <h3 className="text-[15px] font-semibold text-white/75">{s.title}</h3>
-                    <p className="mt-1.5 text-[13.5px] leading-[1.65] text-white/30">{s.desc}</p>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </section>
-
-        {/* Statement */}
-        <section className="mx-auto mt-24 max-w-[640px] px-5 text-center sm:mt-36 sm:px-6">
+        {/* Value props -- typography only, no cards, no icons */}
+        <section className="mx-auto mt-28 max-w-[600px] px-6 sm:mt-40">
           <Reveal>
-            <blockquote className="relative">
-              <div className="pointer-events-none absolute -inset-12 rounded-3xl" style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 50%, rgba(99,102,241,0.04) 0%, transparent 70%)' }} />
-              <p className="relative text-[17px] leading-[1.85] text-white/35">
-                GTM Pilot is a desktop app that runs entirely on your computer.
-                Connect your enrichment APIs, describe what you need, and watch
-                your spreadsheet fill in real time.
-              </p>
-              <p className="relative mt-5 text-[15px] text-white/20">
-                One <span className="rounded-md border border-white/[0.08] bg-white/[0.04] px-1.5 py-0.5 font-mono text-[13px] text-white/40">.db</span> file per project.
-                No cloud. No vendor lock-in. No seat fees.
-              </p>
-            </blockquote>
+            <h2 className="text-center text-[1.5rem] font-bold leading-[1.3] tracking-[-0.03em] text-white/80 sm:text-[2rem]">
+              Describe what you need.<br />
+              <span className="text-white/30">The agent builds the pipeline.</span>
+            </h2>
           </Reveal>
+
+          <div className="mt-16 space-y-12">
+            <Reveal delay={0.05}>
+              <p className="text-[14px] leading-[1.75] text-white/40">
+                <span className="font-semibold text-white/70">Columns are functions.</span>{' '}
+                Every computed column is JavaScript that calls enrichment
+                APIs -- Apollo, Prospeo, Clearbit, or any endpoint you want.
+                Chain them into a DAG that cascades automatically.
+              </p>
+            </Reveal>
+
+            <Reveal delay={0.05}>
+              <p className="text-[14px] leading-[1.75] text-white/40">
+                <span className="font-semibold text-white/70">Runs on your machine.</span>{' '}
+                One{' '}<span className="font-mono text-[13px] text-white/50">.db</span>{' '}file
+                per project. Your API keys stay local. No cloud, no seat fees,
+                no vendor lock-in.
+              </p>
+            </Reveal>
+
+            <Reveal delay={0.05}>
+              <p className="text-[14px] leading-[1.75] text-white/40">
+                <span className="font-semibold text-white/70">Watch it happen.</span>{' '}
+                Hit run and cells fill in real time. Batch execution with
+                live status, automatic retries, and error surfacing across
+                every row.
+              </p>
+            </Reveal>
+          </div>
         </section>
+
+        {/* Divider line */}
+        <div className="mx-auto mt-28 max-w-[120px] border-t border-white/[0.06] sm:mt-40" />
 
         {/* Final CTA */}
-        <section className="relative mx-auto mt-24 max-w-[1200px] px-5 text-center sm:mt-36 sm:px-6">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[300px]" style={{ background: 'radial-gradient(ellipse 40% 60% at 50% 30%, rgba(99,102,241,0.06) 0%, transparent 70%)' }} />
+        <section className="mx-auto mt-28 max-w-[600px] px-6 text-center sm:mt-40">
           <Reveal>
-            <p className="text-[12px] font-semibold tracking-[0.15em] text-emerald-400/50 uppercase">Free during early access</p>
-            <h2 className="mt-3 text-[1.75rem] font-bold tracking-[-0.03em] text-white/90 sm:text-[2.5rem]">
-              Try GTM Pilot today
+            <p className="text-[13px] font-medium text-white/20">Free during early access</p>
+            <h2 className="mt-4 text-[1.5rem] font-bold tracking-[-0.03em] text-white/80 sm:text-[2rem]">
+              Try GTM Pilot
             </h2>
-            <p className="mx-auto mt-4 max-w-[380px] text-[14px] leading-[1.6] text-white/30">
-              Download the desktop app and start enriching in under a minute. No account required.
-            </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <a
-                href="#"
-                className="group relative flex items-center gap-2.5 rounded-full bg-white px-7 py-3 text-[13px] font-semibold text-[#0A0A0A] shadow-[0_0_20px_rgba(255,255,255,0.15)] transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.25)] active:scale-[0.97]"
-              >
+              <a href="#" className="flex items-center gap-2.5 rounded-full bg-white px-6 py-2.5 text-[13px] font-semibold text-[#0A0A0A] transition-all hover:bg-white/90 active:scale-[0.97]">
                 <AppleLogo className="size-[14px]" />
                 Download for macOS
               </a>
-              <a
-                href="#"
-                className="group flex items-center gap-2.5 rounded-full border border-white/[0.12] bg-white/[0.03] px-7 py-3 text-[13px] font-semibold text-white/70 transition-all hover:border-white/20 hover:bg-white/[0.06] hover:text-white/90 active:scale-[0.97]"
-              >
+              <a href="#" className="flex items-center gap-2.5 rounded-full border border-white/10 px-6 py-2.5 text-[13px] font-medium text-white/50 transition-all hover:border-white/20 hover:text-white/70 active:scale-[0.97]">
                 <WindowsLogo className="size-[13px]" />
                 Download for Windows
               </a>
@@ -794,17 +692,15 @@ export function App() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-24 border-t border-white/[0.06] py-10 sm:mt-36">
-        <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-4 px-5 sm:flex-row sm:px-6">
-          <div className="flex items-center gap-2.5">
-            <img src="/icon.svg" alt="GTM Pilot" className="h-3.5 w-auto opacity-40" />
-            <span className="text-[12px] font-medium text-white/20">GTM Pilot</span>
+      <footer className="mt-28 border-t border-white/[0.04] py-8 sm:mt-40">
+        <div className="mx-auto flex max-w-[960px] items-center justify-between px-6 text-[11px] text-white/15">
+          <div className="flex items-center gap-2">
+            <img src="/icon.svg" alt="GTM Pilot" className="h-3 w-auto opacity-25" />
+            <span>&copy; 2026</span>
           </div>
-          <div className="flex items-center gap-6 text-[12px] text-white/20">
-            <a href="mailto:hello@gtmpilot.com" className="transition-colors hover:text-white/40">Contact</a>
-            <a href="#" className="transition-colors hover:text-white/40">Twitter</a>
-            <a href="#" className="transition-colors hover:text-white/40">GitHub</a>
-            <span className="text-white/10">&copy; 2026</span>
+          <div className="flex items-center gap-5">
+            <a href="mailto:hello@gtmpilot.com" className="transition-colors hover:text-white/30">Contact</a>
+            <a href="#" className="transition-colors hover:text-white/30">Twitter</a>
           </div>
         </div>
       </footer>
