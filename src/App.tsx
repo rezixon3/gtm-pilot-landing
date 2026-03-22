@@ -605,32 +605,32 @@ const GRID_COLS = [
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-5 flex justify-center">
-      <span className="rounded-full border border-white/[0.06] bg-white/[0.03] px-3.5 py-1 text-[11px] font-medium tracking-[0.06em] uppercase text-white/30">
-        {children}
-      </span>
-    </div>
+    <span className="inline-flex rounded-full border border-white/[0.06] bg-white/[0.03] px-3.5 py-1 text-[11px] font-medium tracking-[0.06em] uppercase text-white/30">
+      {children}
+    </span>
   )
 }
 
 function PipelineSection() {
   return (
     <section className="mx-auto mt-32 max-w-[1140px] px-6 sm:mt-48">
-      <Reveal>
-        <SectionLabel>Programmable columns</SectionLabel>
-        <h2 className="mx-auto max-w-[640px] text-center text-[1.6rem] font-bold leading-[1.1] tracking-[-0.035em] sm:text-[2.5rem]">
-          <span className="bg-gradient-to-b from-white/90 to-white/50 bg-clip-text text-transparent">
-            Every column is programmable.
-          </span>
-        </h2>
-      </Reveal>
+      <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
+        <Reveal>
+          <SectionLabel>Programmable columns</SectionLabel>
+          <h2 className="mt-5 max-w-[520px] text-[1.6rem] font-bold leading-[1.1] tracking-[-0.035em] sm:text-[2.5rem]">
+            <span className="bg-gradient-to-b from-white/90 to-white/50 bg-clip-text text-transparent">
+              Every column is programmable.
+            </span>
+          </h2>
+        </Reveal>
 
-      <Reveal delay={0.05}>
-        <p className="mx-auto mt-6 max-w-[480px] text-center text-[15px] leading-[1.75] text-white/30">
-          Not a formula. Not a pre-built integration.
-          Real code that calls real APIs.
-        </p>
-      </Reveal>
+        <Reveal delay={0.05}>
+          <p className="max-w-[340px] text-[15px] leading-[1.75] text-white/30 lg:text-right">
+            Not a formula. Not a pre-built integration.
+            Real code that calls real APIs.
+          </p>
+        </Reveal>
+      </div>
 
       {/* The spreadsheet-as-pipeline */}
       <Reveal delay={0.12}>
@@ -764,29 +764,27 @@ function CopilotSection() {
 
   return (
     <section className="mx-auto mt-32 max-w-[1140px] px-6 sm:mt-48">
-      <Reveal>
-        <SectionLabel>AI copilot</SectionLabel>
-        <h2 className="mx-auto max-w-[640px] text-center text-[1.6rem] font-bold leading-[1.1] tracking-[-0.035em] sm:text-[2.5rem]">
-          <span className="bg-gradient-to-b from-white/90 to-white/50 bg-clip-text text-transparent">
-            Describe the pipeline.
-          </span>
-          <br />
-          <span className="bg-gradient-to-b from-white/40 to-white/20 bg-clip-text text-transparent">
-            Claude Code builds it.
-          </span>
-        </h2>
-      </Reveal>
+      <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:gap-16">
+        {/* Left: copy */}
+        <Reveal className="shrink-0 pt-2 lg:w-[320px] lg:sticky lg:top-32">
+          <SectionLabel>AI copilot</SectionLabel>
+          <h2 className="mt-5 text-[1.6rem] font-bold leading-[1.1] tracking-[-0.035em] sm:text-[2.5rem]">
+            <span className="bg-gradient-to-b from-white/90 to-white/50 bg-clip-text text-transparent">
+              Describe the pipeline.
+            </span>
+            <br />
+            <span className="bg-gradient-to-b from-white/40 to-white/20 bg-clip-text text-transparent">
+              Claude Code builds it.
+            </span>
+          </h2>
+          <p className="mt-6 text-[15px] leading-[1.75] text-white/30">
+            No clicking through UIs, no dragging columns into place.
+            The agent creates the table, writes the functions, and runs everything.
+          </p>
+        </Reveal>
 
-      <Reveal delay={0.05}>
-        <p className="mx-auto mt-6 max-w-[440px] text-center text-[15px] leading-[1.75] text-white/30">
-          No clicking through UIs, no dragging columns into place.
-          The agent creates the table, writes the functions, and runs everything.
-        </p>
-      </Reveal>
-
-      {/* Terminal visual */}
-      <Reveal delay={0.12}>
-        <div ref={ref} className="relative mx-auto mt-16 max-w-[780px]">
+        {/* Right: terminal visual */}
+        <div ref={ref} className="relative flex-1 min-w-0">
           <div className="pointer-events-none absolute -inset-20 -z-10" style={{
             background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(99,102,241,0.03) 0%, transparent 70%)',
           }} />
@@ -861,7 +859,7 @@ function CopilotSection() {
             </div>
           </div>
         </div>
-      </Reveal>
+      </div>
     </section>
   )
 }
@@ -875,7 +873,7 @@ export function App() {
     <div className="min-h-screen">
       {/* Nav */}
       <nav className="fixed inset-x-0 top-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[960px] items-center justify-between px-6 py-5">
+        <div className="mx-auto flex max-w-[1140px] items-center justify-between px-6 py-5">
           <div className="flex items-center gap-2">
             <img src="/icon.svg" alt="" className="h-[17px] w-auto" />
             <span className="text-[13px] font-semibold tracking-[-0.01em] text-white/60">GTM Pilot</span>
@@ -886,7 +884,7 @@ export function App() {
 
       <main>
         {/* Hero */}
-        <section className="relative mx-auto max-w-[960px] px-6 pt-24 pb-2 text-center sm:pt-28">
+        <section className="relative mx-auto max-w-[1140px] px-6 pt-24 pb-2 text-center sm:pt-28">
           <div
             className="pointer-events-none absolute inset-x-0 -top-40 h-[500px]"
             style={{ background: 'radial-gradient(ellipse 60% 45% at 50% 0%, rgba(99,102,241,0.06) 0%, transparent 70%)' }}
@@ -952,28 +950,31 @@ export function App() {
         {/* Extensions */}
         <section className="mx-auto mt-32 max-w-[1140px] px-6 sm:mt-48">
           <Reveal>
-            <SectionLabel>Extensions</SectionLabel>
-            <h2 className="mx-auto max-w-[640px] text-center text-[1.6rem] font-bold leading-[1.1] tracking-[-0.035em] sm:text-[2.5rem]">
-              <span className="bg-gradient-to-b from-white/90 to-white/50 bg-clip-text text-transparent">
-                Connect once.
-              </span>
-              <br />
-              <span className="bg-gradient-to-b from-white/40 to-white/20 bg-clip-text text-transparent">
-                Enrich everything.
-              </span>
-            </h2>
-          </Reveal>
+            <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.015]" style={{
+              boxShadow: '0 32px 80px -16px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.02) inset',
+            }}>
+              {/* Top: headline row */}
+              <div className="flex flex-col gap-8 border-b border-white/[0.04] px-8 py-10 sm:px-12 sm:py-12 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <SectionLabel>Extensions</SectionLabel>
+                  <h2 className="mt-5 text-[1.6rem] font-bold leading-[1.1] tracking-[-0.035em] sm:text-[2.5rem]">
+                    <span className="bg-gradient-to-b from-white/90 to-white/50 bg-clip-text text-transparent">
+                      Connect once.
+                    </span>
+                    <br />
+                    <span className="bg-gradient-to-b from-white/40 to-white/20 bg-clip-text text-transparent">
+                      Enrich everything.
+                    </span>
+                  </h2>
+                </div>
+                <p className="max-w-[300px] text-[15px] leading-[1.75] text-white/30 lg:text-right">
+                  Typed SDK methods with auth, rate limits, and response mapping
+                  handled automatically.
+                </p>
+              </div>
 
-          <Reveal delay={0.05}>
-            <p className="mx-auto mt-6 max-w-[440px] text-center text-[15px] leading-[1.75] text-white/30">
-              Typed SDK methods with auth, rate limits, and response mapping
-              handled automatically. Bring your own API keys.
-            </p>
-          </Reveal>
-
-          <Reveal delay={0.12}>
-            <div className="relative mx-auto mt-14 max-w-[680px]">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Bottom: extension grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {([
                   { id: 'apollo',    name: 'Apollo',    desc: 'People and company enrichment', color: '#6C3FE0' },
                   { id: 'prospeo',   name: 'Prospeo',   desc: 'Email finder and verification',  color: '#3B82F6' },
@@ -982,14 +983,21 @@ export function App() {
                   { id: 'firecrawl', name: 'Firecrawl', desc: 'Web scraping and extraction',     color: '#F59E0B' },
                   { id: 'zerobounce',name: 'ZeroBounce', desc: 'Email validation at scale',      color: '#10B981' },
                 ] as const).map((ext, i) => (
-                  <div key={ext.id} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5 transition-colors hover:border-white/[0.1] hover:bg-white/[0.04]">
-                    {/* Placeholder logo -- replace with <img src={`/ext/${ext.id}.svg`} /> */}
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg" style={{ background: ext.color + '18' }}>
-                      <span className="text-[11px] font-bold" style={{ color: ext.color }}>{ext.name[0]}</span>
+                  <div
+                    key={ext.id}
+                    className={`flex items-center gap-4 px-8 py-5 sm:px-8 transition-colors hover:bg-white/[0.02] ${
+                      i < 3 ? 'border-b border-white/[0.04]' : ''
+                    } ${i % 3 !== 2 ? 'lg:border-r lg:border-white/[0.04]' : ''} ${
+                      i % 2 === 0 && i < 4 ? 'sm:border-r sm:border-white/[0.04]' : ''
+                    }`}
+                  >
+                    {/* Placeholder logo */}
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl" style={{ background: ext.color + '12' }}>
+                      <span className="text-[13px] font-bold" style={{ color: ext.color }}>{ext.name[0]}</span>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[13px] font-semibold text-white/70">{ext.name}</p>
-                      <p className="truncate text-[11.5px] text-white/25">{ext.desc}</p>
+                      <p className="text-[13.5px] font-semibold text-white/65">{ext.name}</p>
+                      <p className="mt-0.5 truncate text-[12px] text-white/25">{ext.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -998,30 +1006,34 @@ export function App() {
           </Reveal>
         </section>
 
-        {/* Divider */}
-        <div className="mx-auto mt-32 max-w-[120px] border-t border-white/[0.06] sm:mt-48" />
-
         {/* Final CTA */}
-        <section className="mx-auto mt-32 max-w-[600px] px-6 text-center sm:mt-48">
+        <section className="mx-auto mt-32 max-w-[1140px] px-6 sm:mt-48">
           <Reveal>
-            <SectionLabel>Early access</SectionLabel>
-            <h2 className="mt-4 text-[1.6rem] font-bold leading-[1.1] tracking-[-0.035em] sm:text-[2.5rem]">
-              <span className="bg-gradient-to-b from-white/90 to-white/50 bg-clip-text text-transparent">
-                Start building pipelines.
-              </span>
-            </h2>
-            <p className="mx-auto mt-5 max-w-[360px] text-[15px] leading-[1.75] text-white/30">
-              Free while in early access. Mac and Windows.
-            </p>
-            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-              <a href="#" className="flex items-center gap-2.5 rounded-full bg-white px-6 py-2.5 text-[13px] font-semibold text-[#0A0A0A] transition-all hover:bg-white/90 active:scale-[0.97]">
-                <AppleLogo className="size-[14px]" />
-                Download for Mac
-              </a>
-              <a href="#" className="flex items-center gap-2.5 rounded-full border border-white/10 px-6 py-2.5 text-[13px] font-medium text-white/50 transition-all hover:border-white/20 hover:text-white/70 active:scale-[0.97]">
-                <WindowsLogo className="size-[13px]" />
-                Download for Windows
-              </a>
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] px-8 py-14 sm:px-16 sm:py-20" style={{
+              boxShadow: '0 32px 80px -16px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.02) inset',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.005) 100%)',
+            }}>
+              <div className="flex flex-col items-center text-center">
+                <SectionLabel>Early access</SectionLabel>
+                <h2 className="mt-5 text-[1.6rem] font-bold leading-[1.1] tracking-[-0.035em] sm:text-[2.5rem]">
+                  <span className="bg-gradient-to-b from-white/90 to-white/50 bg-clip-text text-transparent">
+                    Start building pipelines.
+                  </span>
+                </h2>
+                <p className="mt-5 max-w-[360px] text-[15px] leading-[1.75] text-white/30">
+                  Free while in early access. Mac and Windows.
+                </p>
+                <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+                  <a href="#" className="flex items-center gap-2.5 rounded-full bg-white px-6 py-2.5 text-[13px] font-semibold text-[#0A0A0A] transition-all hover:bg-white/90 active:scale-[0.97]">
+                    <AppleLogo className="size-[14px]" />
+                    Download for Mac
+                  </a>
+                  <a href="#" className="flex items-center gap-2.5 rounded-full border border-white/10 px-6 py-2.5 text-[13px] font-medium text-white/50 transition-all hover:border-white/20 hover:text-white/70 active:scale-[0.97]">
+                    <WindowsLogo className="size-[13px]" />
+                    Download for Windows
+                  </a>
+                </div>
+              </div>
             </div>
           </Reveal>
         </section>
