@@ -498,19 +498,21 @@ function Demo() {
   const scaledH = totalH * scale
 
   return (
-    <div ref={outer} className="relative mx-auto w-full" style={{ maxWidth: DEMO_W + 32 }}>
+    <div ref={outer} className="relative mx-auto w-full overflow-hidden" style={{ maxWidth: DEMO_W + 32 }}>
       {/* Ambient glow */}
       <div className="pointer-events-none absolute -inset-32 z-0"
         style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(99,102,241,0.04) 0%, transparent 70%)' }} />
 
-      <div className="flex justify-center" style={{ height: scaledH }}>
+      <div className="relative mx-auto" style={{ width: DEMO_W * scale, height: scaledH }}>
         <div
           ref={el}
           style={{
             width: DEMO_W,
-            transformOrigin: 'top center',
+            transformOrigin: 'top left',
             transform: `scale(${scale})`,
-            flexShrink: 0,
+            position: 'absolute',
+            top: 0,
+            left: 0,
           }}
         >
           <div
