@@ -454,8 +454,8 @@ function StatusBar({ tick }: { tick: number }) {
 // Demo window
 // ---------------------------------------------------------------------------
 
-const DEMO_W = 900
-const DEMO_CONTENT_H = 300
+const DEMO_W = 1200
+const DEMO_CONTENT_H = 420
 
 function Demo() {
   const [tick, setTick] = useState(0)
@@ -498,7 +498,7 @@ function Demo() {
   const scaledH = totalH * scale
 
   return (
-    <div ref={outer} className="relative mx-auto w-full overflow-hidden" style={{ maxWidth: DEMO_W + 32 }}>
+    <div ref={outer} className="relative mx-auto w-full overflow-hidden" style={{ maxWidth: DEMO_W + 48 }}>
       {/* Ambient glow */}
       <div className="pointer-events-none absolute -inset-32 z-0"
         style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(99,102,241,0.04) 0%, transparent 70%)' }} />
@@ -555,7 +555,7 @@ export function App() {
 
       <main>
         {/* Hero */}
-        <section className="mx-auto max-w-[1200px] px-5 pt-28 pb-4 text-center sm:px-6 sm:pt-36">
+        <section className="mx-auto max-w-[1200px] px-5 pt-20 pb-4 text-center sm:px-6 sm:pt-24">
           <h1 className="anim-hero-1 text-[2.5rem] leading-[1.06] font-bold tracking-[-0.035em] text-white sm:text-[4.5rem] md:text-[5.5rem]">
             Cursor for<br />GTM Engineers
           </h1>
@@ -565,7 +565,7 @@ export function App() {
           </p>
 
           {/* Download */}
-          <div id="download" className="anim-hero-3 mt-10 flex flex-wrap items-center justify-center gap-3">
+          <div id="download" className="anim-hero-3 mt-6 flex flex-wrap items-center justify-center gap-3">
             <a href="#" className="group flex items-center gap-2.5 rounded-full bg-white px-6 py-2.5 text-[13px] font-medium text-[#0A0A0A] transition-all hover:bg-white/90 active:scale-[0.98]">
               <AppleLogo className="size-[14px]" />
               Download for Mac
@@ -578,7 +578,7 @@ export function App() {
         </section>
 
         {/* Demo */}
-        <section className="anim-hero-4 mx-auto mt-12 max-w-[1000px] px-4 sm:mt-16">
+        <section className="anim-hero-4 mx-auto mt-10 max-w-[1400px] px-4 sm:mt-12">
           <Demo />
         </section>
 
