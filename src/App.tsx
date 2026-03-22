@@ -767,25 +767,17 @@ function CopilotSection() {
         {/* Left: copy */}
         <Reveal className="shrink-0 lg:w-[340px] lg:sticky lg:top-32">
           <h2 className="text-[1.6rem] font-bold leading-[1.15] tracking-[-0.035em] text-white/85 sm:text-[2.2rem]">
-            Talk to it.<br />
-            <span className="text-white/35">It builds the pipeline.</span>
+            Claude Code is<br />
+            <span className="text-white/35">your copilot.</span>
           </h2>
           <p className="mt-5 text-[15px] leading-[1.75] text-white/35">
             No clicking, no configuring, no dragging columns into place.
             Describe what you need in plain English.
           </p>
           <p className="mt-4 text-[15px] leading-[1.75] text-white/25">
-            The AI agent creates the table, writes the functions,
+            The agent creates the table, writes the functions,
             connects the APIs, and runs everything.
           </p>
-          <div className="mt-6 flex items-center gap-2.5">
-            <div className="flex size-5 items-center justify-center rounded-md bg-white/[0.04]">
-              <svg className="size-3 text-white/25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
-              </svg>
-            </div>
-            <span className="text-[12px] text-white/20">Powered by Claude Code</span>
-          </div>
         </Reveal>
 
         {/* Right: terminal visual */}
