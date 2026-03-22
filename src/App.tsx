@@ -1090,7 +1090,30 @@ export function App() {
         </section>
 
         {/* Demo */}
-        <section className="anim-hero-3 mx-auto mt-10 max-w-[1140px] px-4 sm:mt-14">
+        <section className="anim-hero-3 relative mx-auto mt-10 max-w-[1140px] px-4 sm:mt-14">
+          {/* Atmospheric background */}
+          <div className="pointer-events-none absolute -inset-x-[200px] -top-[120px] -bottom-[80px] -z-10 overflow-hidden">
+            {/* Main warm glow - center */}
+            <div className="absolute inset-0" style={{
+              background: 'radial-gradient(ellipse 70% 60% at 50% 45%, rgba(120, 80, 40, 0.12) 0%, transparent 70%)',
+            }} />
+            {/* Purple accent - left */}
+            <div className="absolute inset-0" style={{
+              background: 'radial-gradient(ellipse 40% 50% at 25% 55%, rgba(99, 60, 180, 0.08) 0%, transparent 70%)',
+            }} />
+            {/* Deep blue accent - right */}
+            <div className="absolute inset-0" style={{
+              background: 'radial-gradient(ellipse 45% 55% at 75% 50%, rgba(40, 60, 120, 0.08) 0%, transparent 70%)',
+            }} />
+            {/* Warm highlight - top center */}
+            <div className="absolute inset-0" style={{
+              background: 'radial-gradient(ellipse 50% 30% at 50% 25%, rgba(180, 120, 60, 0.06) 0%, transparent 70%)',
+            }} />
+            {/* Subtle green accent - bottom */}
+            <div className="absolute inset-0" style={{
+              background: 'radial-gradient(ellipse 35% 30% at 55% 75%, rgba(40, 100, 80, 0.05) 0%, transparent 70%)',
+            }} />
+          </div>
           <Demo />
         </section>
 
