@@ -661,7 +661,53 @@ export function App() {
           </div>
         </section>
 
-        {/* Divider line */}
+        {/* Extensions */}
+        <section className="mx-auto mt-28 max-w-[1000px] px-6 sm:mt-40">
+          <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:gap-16">
+            {/* Left text */}
+            <Reveal className="shrink-0 lg:w-[300px] lg:sticky lg:top-32">
+              <h2 className="text-[1.5rem] font-bold leading-[1.3] tracking-[-0.03em] text-white/80 sm:text-[1.75rem]">
+                Enrich with extensions
+              </h2>
+              <p className="mt-3 text-[14px] leading-[1.7] text-white/35">
+                Connect your enrichment APIs once. The agent calls them
+                through typed SDK methods -- auth, rate limits, and response
+                mapping handled automatically.
+              </p>
+            </Reveal>
+
+            {/* Right grid */}
+            <div className="relative flex-1">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {([
+                  { id: 'apollo',    name: 'Apollo',    desc: 'People and company enrichment', color: '#6C3FE0' },
+                  { id: 'prospeo',   name: 'Prospeo',   desc: 'Email finder and verification',  color: '#3B82F6' },
+                  { id: 'hunter',    name: 'Hunter',    desc: 'Domain search and email verify',  color: '#F97316' },
+                  { id: 'clearbit',  name: 'Clearbit',  desc: 'Company and person data',         color: '#6366F1' },
+                  { id: 'firecrawl', name: 'Firecrawl', desc: 'Web scraping and extraction',     color: '#F59E0B' },
+                  { id: 'zerobounce',name: 'ZeroBounce', desc: 'Email validation at scale',      color: '#10B981' },
+                ] as const).map((ext, i) => (
+                  <Reveal key={ext.id} delay={i * 0.04}>
+                    <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5 transition-colors hover:border-white/[0.1] hover:bg-white/[0.04]">
+                      {/* Placeholder logo -- replace with <img src={`/ext/${ext.id}.svg`} /> */}
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg" style={{ background: ext.color + '18' }}>
+                        <span className="text-[11px] font-bold" style={{ color: ext.color }}>{ext.name[0]}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold text-white/70">{ext.name}</p>
+                        <p className="truncate text-[11.5px] text-white/25">{ext.desc}</p>
+                      </div>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+              {/* Fade-out bottom row like VS Code */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16" style={{ background: 'linear-gradient(to top, #0A0A0A, transparent)' }} />
+            </div>
+          </div>
+        </section>
+
+        {/* Divider */}
         <div className="mx-auto mt-28 max-w-[120px] border-t border-white/[0.06] sm:mt-40" />
 
         {/* Final CTA */}
